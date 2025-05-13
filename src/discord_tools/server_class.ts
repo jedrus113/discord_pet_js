@@ -64,7 +64,7 @@ class MyDiscordHelperPerServer {
             } catch (error) {
                 console.error(`Błąd w cyklu dla guild ( ${this.server.id}) ${this.server.name}:`, error);
             }
-        }, 60 * 1000); // 5 minut w milisekundach
+        }, 5 * 60 * 1000); // 5 minut w milisekundach
     }
 
     private async cycle() {
