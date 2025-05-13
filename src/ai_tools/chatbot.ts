@@ -36,9 +36,12 @@ export async function getAiResponse(prompt: string, openaiHistoryMessages: ChatC
 export async function openAiChat(message: Message, messages: Collection<string, Message<boolean>>, messageLengthLvl: Number) {
   const openaiHistoryMessages: ChatCompletionMessageParam[] = [];
   
+  let limit = 5000;
   messages.forEach((oldMessage: Message) => {
     const content = oldMessage.cleanContent.trim();
     if (content.length > 0) {
+      limit -= content.length;
+      if (limit < 0) return;
       openaiHistoryMessages.push({
         "role": 'user',
         "content": `User: ${oldMessage.author.id}\nCurrent nick: ${oldMessage.author.username}\nCurrent display name to refer to user: ${oldMessage.author.displayName}\nMessage:\n${content}\n\nMusisz zachęcić lub przekazać tę wiadomość w nieoczekiwany sposób. Postaraj się wybrać między śmieszkowanie, powagą, złością a inną formą przekazu, liczę na Twoją kreatywność.\nWeź pod uwagę wybierajac swój charakter godzinę. Ale nie mów o swoich sposobach wybierania nastroju.\n Jest godzina: ${new Date().toLocaleString()}`,
