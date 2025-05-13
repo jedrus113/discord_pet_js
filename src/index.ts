@@ -1,6 +1,6 @@
+import client from './discord_tools/client';
 import { Events, GuildMember, PartialGuildMember, Message } from 'discord.js';
 
-import client from './discord_tools/client';
 import MyDiscordHelperPerServer from './discord_tools/server_class';
 
 

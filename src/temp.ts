@@ -1,17 +1,17 @@
-import { Events } from 'discord.js';
+import { Events, Message } from 'discord.js';
 import { joinVoiceChannel, getVoiceConnection, createAudioResource, createAudioPlayer, VoiceReceiver, EndBehaviorType } from '@discordjs/voice';
 import prism from 'prism-media';
 import { createWriteStream, writeFileSync, readFileSync } from 'fs';
 import { Writable } from 'stream';
 
-import { client } from './discord_tools/client';
+import client from './discord_tools/client';
 
 
 client.once(Events.ClientReady, () => {
     console.log(`✅ Zalogowano jako ${client.user?.tag}`);
 });
 
-client.on(Events.MessageCreate, async message => {
+client.on(Events.MessageCreate, async (message: Message) => {
     console.log(`Message ${message.content}`);
 
   if (message.content === "!join") {
