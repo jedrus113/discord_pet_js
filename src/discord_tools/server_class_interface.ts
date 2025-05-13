@@ -35,21 +35,3 @@ export interface ServerConfig {
     thisBotChannelsResponseLvl?: ChannelBotChannelsResponseLvlMap;
     thisBotCycleMessage?: BotCycleAction;
 }
-
-export interface UserData {
-    "userId": string;
-    "username": string;
-    "displayName": string;
-}
-
-export interface UserData {
-    "userId": string;
-    "username": string;
-    "displayName": string;
-}
-
-export interface MessageHistory {
-    "user": UserData,
-    "createdAt": string,
-    "content": string,
-}

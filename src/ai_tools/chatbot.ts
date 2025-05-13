@@ -15,6 +15,7 @@ export async function getAiResponse(prompt: string, openaiHistoryMessages: ChatC
 
     const result = await openai.chat.completions.create({
         model: 'gpt-4o',
+        temperature: 1,
         messages: [
             { role: 'system', content: "Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą i administratorem, zarządzasz wszystkim i kazdym. Mówisz jak smok do swoich smocząt." },
             ...openaiHistoryMessages,
@@ -40,7 +41,7 @@ export async function openAiChat(message: Message, messages: Collection<string, 
     if (content.length > 0) {
       openaiHistoryMessages.push({
         "role": 'user',
-        "content": `User: ${oldMessage.author.id}\nCurrent nick: ${oldMessage.author.username}\nCurrent display name to refer to user: ${oldMessage.author.displayName}\nMessage:\n${content}`,
+        "content": `User: ${oldMessage.author.id}\nCurrent nick: ${oldMessage.author.username}\nCurrent display name to refer to user: ${oldMessage.author.displayName}\nMessage:\n${content}\n\nMusisz zachęcić lub przekazać tę wiadomość w nieoczekiwany sposób. Postaraj się wybrać między śmieszkowanie, powagą, złością a inną formą przekazu, liczę na Twoją kreatywność.\nWeź pod uwagę wybierajac swój charakter godzinę. Ale nie mów o swoich sposobach wybierania nastroju.\n Jest godzina: ${new Date().toLocaleString()}`,
       })
     }
   });

@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Guild, TextChannel, User, EmbedBuilder, AttachmentBuilder, Message } from 'discord.js';
-import { ServerConfig, ForbidenAppOnProtectedChannelAction, BotCycleAction, UserData } from './server_class_interface'
+import { ServerConfig, ForbidenAppOnProtectedChannelAction, BotCycleAction } from './server_class_interface'
 import { getAiResponse } from '../ai_tools/chatbot'
 
 
@@ -64,7 +64,7 @@ class MyDiscordHelperPerServer {
             } catch (error) {
                 console.error(`Błąd w cyklu dla guild ( ${this.server.id}) ${this.server.name}:`, error);
             }
-        }, 5 * 60 * 1000); // 5 minut w milisekundach
+        }, 60 * 1000); // 5 minut w milisekundach
     }
 
     private async cycle() {
@@ -74,6 +74,7 @@ class MyDiscordHelperPerServer {
         
         if (!action) return;
         if (this.lastCycleTime && (currentTime - this.lastCycleTime) <= action.delayms) return;
+        console.log("Cykl się zaczyna");
         
         this.lastCycleTime = currentTime; // Zaktualizuj czas ostatniego wywołania
         
