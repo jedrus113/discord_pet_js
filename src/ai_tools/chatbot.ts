@@ -5,7 +5,7 @@ import openai from './client'
 import { ChatCompletionContentPart, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 
-export async function getAiResponse(systemPrompt: string, prompt:string, openaiHistoryMessages: ChatCompletionMessageParam[], allImageUrls: string[]): Promise<string | null> {
+export async function getAiResponse(prompt: string, openaiHistoryMessages: ChatCompletionMessageParam[], allImageUrls: string[]): Promise<string | null> {
     const imageInputs: ChatCompletionContentPart[] = allImageUrls.map((url) => ({
         type: 'image_url',
         image_url: {
@@ -16,15 +16,15 @@ export async function getAiResponse(systemPrompt: string, prompt:string, openaiH
     const result = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
-        { role: 'system', content: systemPrompt },
-        ...openaiHistoryMessages,
-        {
-            role: 'user',
-            content: [
-            { type: 'text', text: prompt },
-            ...imageInputs,
-            ],
-        },
+            { role: 'system', content: "Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą i administratorem, zarządzasz wszystkim i kazdym. Mówisz jak smok do swoich smocząt." },
+            ...openaiHistoryMessages,
+            {
+                role: 'user',
+                content: [
+                { type: 'text', text: prompt },
+                ...imageInputs,
+                ],
+            },
         ],
     });
 
@@ -54,7 +54,6 @@ export async function openAiChat(message: Message, messages: Collection<string, 
   );
 
   const prompt: string = `Otrzymałeś nową wiadomość. Na nią odpowiedz User: ${message.author.id}\nCurrent nick: ${message.author.username}\nCurrent display name to refer to user: ${message.author.displayName}\nMessage:\n${message.content}`
-  const systemPrompt: string = "Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą i administratorem, zarządzasz wszystkim i kazdym. Mówisz jak smok do swoich smocząt."
 
-  return await getAiResponse(systemPrompt, prompt, openaiHistoryMessages, allImageUrls) || "Nie udało się uzyskac odpowiedzi. Szczerbatek śpi??? czy coś :/ Wołać andrew!"
+  return await getAiResponse(prompt, openaiHistoryMessages, allImageUrls) || "Nie udało się uzyskac odpowiedzi. Szczerbatek śpi??? czy coś :/ Wołać andrew!"
 }

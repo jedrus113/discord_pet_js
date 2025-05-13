@@ -6,8 +6,6 @@ import MyDiscordHelperPerServer from './discord_tools/server_class';
 import { openAiChat } from './ai_tools/chatbot'
 
 
-
-
 // bot logged in
 client.once(Events.ClientReady, async (readyClient) => {
     console.log(`✅ Zalogowano jako ${readyClient.user?.tag}`);

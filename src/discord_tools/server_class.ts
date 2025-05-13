@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { Guild, TextChannel, User, EmbedBuilder, AttachmentBuilder, Message } from 'discord.js';
 import { ServerConfig, ForbidenAppOnProtectedChannelAction, BotCycleAction, UserData } from './server_class_interface'
+import { getAiResponse } from '../ai_tools/chatbot'
 
 
 class MyDiscordHelperPerServer {
@@ -77,9 +78,12 @@ class MyDiscordHelperPerServer {
         this.lastCycleTime = currentTime; // Zaktualizuj czas ostatniego wywołania
         
         const actionChannel: TextChannel = await this.server.channels.fetch(action.destinationChannelId) as TextChannel;
+
+        const prompt: string = `Przekazujesz wiadomość, przekaż wiadomość z templatki dla całego serwera templatka:\n${action.messageTemplate}`;
+        const response: string = await getAiResponse(prompt, [], []) || action.messageTemplate;
         
-        console.log(`Sending to channel ${actionChannel.name} message:\n${action.messageTemplate}`);
-        await actionChannel.send(action.messageTemplate);
+        console.log(`Sending to channel ${actionChannel.name} message:\n${response}`);
+        await actionChannel.send(response);
     }
 
     static get(guild_id: string) {
