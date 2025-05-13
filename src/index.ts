@@ -2,10 +2,8 @@ import client from './discord_tools/client';
 import { Events, ChannelType, GuildMember, PartialGuildMember, Message, Collection } from 'discord.js';
 
 import MyDiscordHelperPerServer from './discord_tools/server_class';
-import { UserData, MessageHistory } from './discord_tools/server_class_interface'
 
-import openai from './ai_tools/client'
-import { ChatCompletionContentPart, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { openAiChat } from './ai_tools/chatbot'
 
 
 
@@ -58,73 +56,12 @@ client.on(Events.MessageCreate, async (message: Message) => {
   console.log(`Message may be important!\npriv: ${isPrivate}\nisBotMentioned: ${isBotMentioned}`);
 
   const messageLengthLvl: Number = await actionHanlder?.getChannelResposeLvl(message.channel.id) || 2;
-  const user_data: UserData = {
-      "userId": message.author.id,
-      "username": message.author.username,
-      "displayName": message.author.displayName,
-  }
+  const messages: Collection<string, Message<boolean>> = await message.channel.messages.fetch({ limit: 100 });
   
-  const historyMessages: MessageHistory[] = [];
-  const openaiHistoryMessages: ChatCompletionMessageParam[] = [];
-  const messages = await message.channel.messages.fetch({ limit: 100 });
-  
-  messages.forEach((oldMessage: Message) => {
-    const content = oldMessage.cleanContent.trim();
-    if (content.length > 0) {
-      historyMessages.push({
-        "createdAt": oldMessage.createdAt.toISOString(),
-        "content": content,
-        "user": {
-          "userId": oldMessage.author.id,
-          "username": oldMessage.author.username,
-          "displayName": oldMessage.author.displayName,
-        },
-      });
-      openaiHistoryMessages.push({
-        "role": 'user',
-        "content": `User: ${oldMessage.author.id}\nCurrent nick: ${oldMessage.author.username}\nCurrent display name to refer to user: ${oldMessage.author.displayName}\nMessage:\n${content}`,
-      })
-    }
-  });
+  const reply: string = await openAiChat(message, messages, messageLengthLvl);
 
-  const urlRegex = /https?:\/\/[^\s"']+|www\.[^\s"']+/g;
-  const foundUrls = message.content.match(urlRegex) || [];
-
-  const attachmentUrls = message.attachments.map((att) => att.url);
-  const allImageUrls = [...attachmentUrls, ...foundUrls].filter((url) =>
-    url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  );
-
-  const imageInputs: ChatCompletionContentPart[] = allImageUrls.map((url) => ({
-    type: 'image_url',
-    image_url: {
-      "url": url,
-    },
-  }));
-
-  const prompt: string = `User: ${message.author.id}\nCurrent nick: ${message.author.username}\nCurrent display name to refer to user: ${message.author.displayName}\nMessage:\n${message.content}`
-
-  const result = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: 'Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą i administratorem, zarządzasz wszystkim i kazdym. Mówisz jak smok do swoich smocząt.' },
-      ...openaiHistoryMessages,
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          ...imageInputs,
-        ],
-      },
-    ],
-  });
-
-  const reply = result.choices[0].message.content;
-
-  if (reply){
-    message.reply(reply);
-  } else{
-    message.reply("Nie mogę pomóc. Jestem botem..");
+  for (let i = 0; i < reply.length; i += 1900) {
+    message.reply(reply.slice(i, i + 2000));
   }
 
 
