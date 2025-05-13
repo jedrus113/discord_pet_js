@@ -19,7 +19,7 @@ export interface ProtectedChannelMap {
     [channelId: string]: ForbidenAppOnProtectedChannelMap;
 }
 
-export interface ChannelBotPermissionsMap {
+export interface ChannelBotChannelsResponseLvlMap {
     [channelId: string]: Number;
 }
 
@@ -32,6 +32,24 @@ export interface ServerConfig {
     channelFarewellId?: string;
 
     appProtectedChannels?: ProtectedChannelMap;
-    thisBotChannelsPermission?: ChannelBotPermissionsMap;
+    thisBotChannelsResponseLvl?: ChannelBotChannelsResponseLvlMap;
     thisBotCycleMessage?: BotCycleAction;
+}
+
+export interface UserData {
+    "userId": string;
+    "username": string;
+    "displayName": string;
+}
+
+export interface UserData {
+    "userId": string;
+    "username": string;
+    "displayName": string;
+}
+
+export interface MessageHistory {
+    "user": UserData,
+    "createdAt": string,
+    "content": string,
 }

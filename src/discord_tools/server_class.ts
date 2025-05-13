@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Guild, TextChannel, User, EmbedBuilder, AttachmentBuilder, Message } from 'discord.js';
-import {ServerConfig, ChannelBotPermissionsMap, ProtectedChannelMap, ForbidenAppOnProtectedChannelMap, ForbidenAppOnProtectedChannelAction, BotCycleAction} from './server_class_interface'
+import { ServerConfig, ForbidenAppOnProtectedChannelAction, BotCycleAction, UserData } from './server_class_interface'
 
 
 class MyDiscordHelperPerServer {
@@ -63,23 +63,23 @@ class MyDiscordHelperPerServer {
             } catch (error) {
                 console.error(`Błąd w cyklu dla guild ( ${this.server.id}) ${this.server.name}:`, error);
             }
-        }, 5 * 1 * 1000); // 30 minut w milisekundach
+        }, 5 * 60 * 1000); // 5 minut w milisekundach
     }
 
     private async cycle() {
         const currentTime = Date.now();
-        console.log("Check" + currentTime);
         
-        const action: BotCycleAction | undefined = this.saveableConfig?.thisBotCycleMessage;
+        const action: BotCycleAction | undefined = this.saveableConfig!.thisBotCycleMessage;
         
         if (!action) return;
         if (this.lastCycleTime && (currentTime - this.lastCycleTime) <= action.delayms) return;
-        console.log("SENDING...");
         
         this.lastCycleTime = currentTime; // Zaktualizuj czas ostatniego wywołania
         
         const actionChannel: TextChannel = await this.server.channels.fetch(action.destinationChannelId) as TextChannel;
-        await actionChannel.send(action.messageTemplate)
+        
+        console.log(`Sending to channel ${actionChannel.name} message:\n${action.messageTemplate}`);
+        await actionChannel.send(action.messageTemplate);
     }
 
     static get(guild_id: string) {
@@ -155,6 +155,10 @@ class MyDiscordHelperPerServer {
         await message.delete();
 
         return true;
+    }
+
+    async getChannelResposeLvl(channelId: string) {
+        return this.saveableConfig!.thisBotChannelsResponseLvl?.[channelId];
     }
     
 }

@@ -6,23 +6,32 @@
 
 
 # Setup
+1. Clone repo
+```
+git clone https://github.com/jedrus113/discord_pet_js.git
+```
 
-Biblioteki wymagane:
-npm install discord.js @discordjs/voice dotenv
-npm install --save-dev typescript ts-node @types/node
+2. Install Node.js and npm
+```
+sudo apt install nodejs npm
+```
 
-npm install prism-media
+3. Install depedencies (js libraries for project)
+```
+npm install
+```
 
+4. Compile TypeScript files to JS
+```
+npx tsc
+```
 
-#MACOS
-npm install opusscript
-#LINUX
-npm install @discordjs/opus
+5. RUN
+```
+node dist/index.js
+```
 
-
-# nie potrzebne w ogóle ...
-npm install wav
-
-
-#RUN
+# Test RUN for development - no compilation
+```
 npx ts-node src/index.ts
+```
