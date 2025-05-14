@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Guild, TextChannel, User, EmbedBuilder, AttachmentBuilder, Message } from 'discord.js';
+import client from "./client"
 import { ServerConfig, ForbidenAppOnProtectedChannelAction, BotCycleAction } from './server_class_interface'
 import { getAiResponse } from '../ai_tools/chatbot'
 
@@ -80,7 +81,7 @@ class MyDiscordHelperPerServer {
         
         const actionChannel: TextChannel = await this.server.channels.fetch(action.destinationChannelId) as TextChannel;
 
-        const prompt: string = `Przekazujesz wiadomość, przekaż wiadomość z templatki dla całego serwera templatka:\n${action.messageTemplate}`;
+        const prompt: string = `Przekazujesz wiadomość, przekaż wiadomość z templatki dla całego serwera templatka:\n${action.messageTemplate}\n\nMusisz zachęcić lub przekazać tę wiadomość w nieoczekiwany sposób. Postaraj się wybrać między śmieszkowanie, powagą, złością a inną formą przekazu, liczę na Twoją kreatywność.\nWeź pod uwagę wybierajac swój charakter godzinę. Ale nie mów o swoich sposobach wybierania nastroju.\n Jest godzina: ${new Date().toLocaleString()}`;
         const response: string = await getAiResponse(prompt, [], []) || action.messageTemplate;
         
         console.log(`Sending to channel ${actionChannel.name} message:\n${response}`);
@@ -162,8 +163,15 @@ class MyDiscordHelperPerServer {
         return true;
     }
 
-    async getChannelResposeLvl(channelId: string) {
+    async getChannelResposeLvl(channelId: string): Promise<Number  | undefined> {
         return this.saveableConfig!.thisBotChannelsResponseLvl?.[channelId];
+    }
+
+    async getChannelKnowlageBase(): Promise<string | undefined> {
+        let baseInfo: string = "\n"
+        baseInfo += `Twoje ID: ${client.user!.id}\n`
+        baseInfo += `Server name: ${this.saveableConfig!.server_name}\n`
+        return baseInfo + this.saveableConfig!.serverKnowlageBase;
     }
     
 }

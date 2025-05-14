@@ -54,9 +54,10 @@ client.on(Events.MessageCreate, async (message: Message) => {
   console.log(`Message may be important!\npriv: ${isPrivate}\nisBotMentioned: ${isBotMentioned}`);
 
   const messageLengthLvl: Number = await actionHanlder?.getChannelResposeLvl(message.channel.id) || 2;
+  const knowlageBase: string | undefined = await actionHanlder?.getChannelKnowlageBase()
   const messages: Collection<string, Message<boolean>> = await message.channel.messages.fetch({ limit: 100 });
   
-  const reply: string = await openAiChat(message, messages, messageLengthLvl);
+  const reply: string = await openAiChat(message, messages, messageLengthLvl, knowlageBase);
 
   for (let i = 0; i < reply.length; i += 1900) {
     message.reply(reply.slice(i, i + 2000));

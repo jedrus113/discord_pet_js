@@ -27,6 +27,7 @@ export interface ServerConfig {
     server_name: string;
     conf_created: string;
     conf_updated?: string;
+    serverKnowlageBase?: string;
 
     welcomeChannelId?: string;
     channelFarewellId?: string;
