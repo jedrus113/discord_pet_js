@@ -77,7 +77,7 @@ class MyDiscordHelperPerServer {
         
         const actionChannel = await this.server.channels.fetch(action.destinationChannelId);
 
-        const prompt = `Przekazujesz wiadomość, przekaż wiadomość z templatki dla całego serwera templatka:\n${action.messageTemplate}\n\nMusisz zachęcić lub przekazać tę wiadomość w nieoczekiwany sposób. Postaraj się wybrać między śmieszkowanie, powagą, złością a inną formą przekazu, liczę na Twoją kreatywność.\nWeź pod uwagę wybierając swój charakter godzinę. Ale nie mów o swoich sposobach wybierania nastroju.\n Jest godzina: ${new Date().toLocaleString()}`;
+        const prompt = `Przekazujesz wiadomość, przekaż wiadomość z templatki dla całego serwera templatka:\n${action.messageTemplate}\n\nMusisz zachęcić lub przekazać tę wiadomość w nieoczekiwany sposób. Wiadomość musi być jedym krótkim zdaniem. Postaraj się wybrać między śmieszkowanie, powagą, złością a inną formą przekazu, liczę na Twoją kreatywność.\nWeź pod uwagę wybierając swój charakter godzinę. Ale nie mów o swoich sposobach wybierania nastroju.\n Jest godzina: ${new Date().toLocaleString()}`;
         const response = await getAiResponse(prompt, [], []) || action.messageTemplate;
         
         console.log(`Sending to channel ${actionChannel.name} message:\n${response}`);
