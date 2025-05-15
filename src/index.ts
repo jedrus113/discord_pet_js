@@ -66,4 +66,7 @@ client.on(Events.MessageCreate, async (message: Message) => {
 
 });
 
+//client.commands = new Collection([['ping', { name: 'ping', description: 'Sprawdza responsywność bota', execute(message: any) { message.channel.send('Pong!'); } }]]);
+
+
 client.login(process.env.DISCORD_TOKEN);

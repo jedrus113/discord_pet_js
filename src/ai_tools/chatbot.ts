@@ -7,7 +7,7 @@ import client from '../discord_tools/client';
 
 
 export async function getAiResponse(prompt: string, openaiHistoryMessages: ChatCompletionMessageParam[], allImageUrls: string[], knowlageBase?: string): Promise<string | null> {
-    console.log(`Prompt: ${prompt}`)
+    console.log(`Prompt: ${prompt}`);
     const imageInputs: ChatCompletionContentPart[] = allImageUrls.map((url) => ({
         type: 'image_url',
         image_url: {
@@ -31,7 +31,7 @@ export async function getAiResponse(prompt: string, openaiHistoryMessages: ChatC
             },
         ],
     });
-    console.log(`Response: ${result.choices[0]?.message.content}\n\n`)
+    console.log(`Response: ${result.choices[0]?.message.content}\n\n`);
     return result.choices[0]?.message.content;
 }
 
@@ -63,9 +63,7 @@ export async function openAiChat(message: Message, messages: Collection<string, 
   const foundUrls = message.content.match(urlRegex) || [];
 
   const attachmentUrls = message.attachments.map((att) => att.url);
-  const allImageUrls = [...attachmentUrls, ...foundUrls].filter((url) =>
-    url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  );
+  const allImageUrls = [...attachmentUrls, ...foundUrls];
 
   const prompt: string = `Otrzymałeś nową wiadomość.\nOd\nUser ID: ${message.author.id}\nNickname: ${message.author.username}\nDisplay name: ${message.author.displayName}\nMessage:\n${message.content}`
 
