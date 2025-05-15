@@ -30,6 +30,10 @@ client.on(Events.GuildMemberRemove, async (member) => {
 // message sent to server
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.id == client.user?.id) return;
+  if (message.author.id == "1358565948352761989"){
+    await message.delete();
+    return;
+  }
 
   // pokemon nameing is disabled as per && false due to refuse to name pokemons reason
   if (false && message.author.id == "716390085896962058" && message.embeds.length > 0) {
