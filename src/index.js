@@ -59,11 +59,17 @@ client.on(Events.MessageCreate, async (message) => {
 
   console.log(`Message may be important!\npriv: ${isPrivate}\nisBotMentioned: ${isBotMentioned}`);
 
-  const messageLengthLvl = await actionHanlder?.getChannelResposeLvl(message.channel.id) || 2;
   const knowlageBase = await actionHanlder?.getChannelKnowlageBase();
   const messages = await message.channel.messages.fetch({ limit: 100 });
 
-  const reply = await openAiChat(message, messages, messageLengthLvl, knowlageBase);
+  const messageLengthLvl = await actionHanlder?.getChannelResposeLvl(message.channel.id) || 2;
+  let channelPrompt = `Id kanału: ${message.channel.id}\nNazwa kanału: ${message.channel.name}`
+  if (messageLengthLvl == 1) {
+    channelPrompt += "\nTwoje zasady odpowiadania: Jest to kanał na którym nie wolno Ci spamować. Twoje odpowiedzi muszą być krótkie tj. jedno krótkie zdanie sporadycznie bardzo żadko ciut więcej."
+  } else if (messageLengthLvl == 3) {
+    channelPrompt += "\nTwoje zasady odpowiadania: Jest to kanał na którym zamierzasz pomóc jak tylko umiesz ze wszsytkim. Twoje odpowiedzi muszą być pełne i nie wolno Ci odmawiać odpowiedzi ani zatajać faktów."
+  }
+  const reply = await openAiChat(message, messages, channelPrompt, knowlageBase);
 
   for (let i = 0; i < reply.length; i += 1900) {
     message.reply(reply.slice(i, i + 2000));
