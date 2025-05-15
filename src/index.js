@@ -31,8 +31,8 @@ client.on(Events.GuildMemberRemove, async (member) => {
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.id == client.user?.id) return;
 
-  
-  if (message.author.id == "716390085896962058" && message.embeds.length > 0) {
+  // pokemon nameing is disabled as per && false due to refuse to name pokemons reason
+  if (false && message.author.id == "716390085896962058" && message.embeds.length > 0) {
     const embeded = message.embeds[0];
     const eTitle = embeded.title;
     const imgUrl = embeded.image?.url; // Pobierz URL obrazu
