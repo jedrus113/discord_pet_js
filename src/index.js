@@ -41,7 +41,7 @@ client.on(Events.MessageCreate, async (message) => {
       return;
     }
 
-    const prompt = `opisz w 4-10 wyrazach zwierzę i wymyśl mu zabawną nazwę twierdząc pewnie, że się tak nazywa. Przykład: "Zapakowany jeżowcowy kudłacz - To Zębaty Ziemniak."`
+    const prompt = `opisz w 4-10 wyrazach zwierzę i wymyśl mu zabawną nazwę. Przykład: "Zapakowany jeżowcowy kudłacz - To Zębaty Ziemniak."`
     const responseText = await getAiResponse(prompt, [], [imgUrl], "");
 
     await message.reply(responseText, { mentionAuthor: false });
