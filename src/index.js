@@ -1,6 +1,6 @@
 const client = require('./discord_tools/client');
 const MyDiscordHelperPerServer = require('./discord_tools/server_class');
-const { Events } = require('discord.js');
+const { Events, ChannelType } = require('discord.js');
 const { openAiChat } = require('./ai_tools/chatbot');
 
 // bot logged in
@@ -36,7 +36,7 @@ client.on(Events.MessageCreate, async (message) => {
 
   if (message.author.bot) return;
 
-  const isPrivate = message.channel?.type === "DM";
+  const isPrivate = message.channel?.type === ChannelType.DM;
   const isBotMentioned = message.mentions?.users.has(client.user.id);
 
   if (!isPrivate && !isBotMentioned) return;
