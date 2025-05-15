@@ -43,7 +43,7 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
     const allImageUrls = [...attachmentUrls, ...foundUrls];
   
     // history
-    let limit = 7000;
+    let limit = 4000;
     messages.forEach(oldMessage => {
         if (limit <= 0) return;
         if (oldMessage.id == message.id) return;
