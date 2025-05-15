@@ -17,13 +17,13 @@ client.once(Events.ClientReady, async (readyClient) => {
 // user joins server
 client.on(Events.GuildMemberAdd, async (member) => {
     console.log(`New user ${member.user.username} in ${member.guild.name}`);
-    MyDiscordHelperPerServer.get(member.guild.id).send_welcome_message(member.user);
+    MyDiscordHelperPerServer.get(member.guild.id).sendWelcomeMessage(member.user);
 });
 
 // user leaves server
 client.on(Events.GuildMemberRemove, async (member) => {
     console.log(`User ${member.user.username} quit ${member.guild.name}`);
-    MyDiscordHelperPerServer.get(member.guild.id).send_farawel_message(member.user);
+    MyDiscordHelperPerServer.get(member.guild.id).sendFarewellMessage(member.user);
 });
 
 

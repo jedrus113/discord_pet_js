@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { Guild, TextChannel } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const client = require('./client');
 const { getAiResponse } = require('../ai_tools/chatbot');
 // Możesz załadować te interfejsy jako obiekty JavaScript jeśli nadal potrzebujesz ich struktury dla odniesienia
