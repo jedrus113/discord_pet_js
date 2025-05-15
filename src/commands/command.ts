@@ -36,5 +36,3 @@ commandsList.set('ping', {
         message.channel.send('Pong!');
     }
 });
-
-//export const clientApp = new ClientApplication(client)

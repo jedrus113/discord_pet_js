@@ -1,5 +1,5 @@
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
-import * as dotenv from 'dotenv';
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const dotenv = require('dotenv');
 
 dotenv.config();
 
@@ -15,4 +15,4 @@ const client = new Client({
     partials: [Partials.Channel],
 });
 
-export default client;
+module.exports = client;

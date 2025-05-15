@@ -1,16 +1,13 @@
-import { promises as fs } from 'fs';
-
+const fs = require('fs').promises;
 
 class ServerConfig {
-    private saveableConfig: Record<string, string | number> = {};
-    private filePath: string;
-
-    constructor(filePath: string) {
-        this.filePath = filePath
+    constructor(filePath) {
+        this.saveableConfig = {};
+        this.filePath = filePath;
         this.loadConfig();
     }
 
-    private async loadConfig(): Promise<void> {
+    async loadConfig() {
         try {
             await fs.access(this.filePath);
             const data = await fs.readFile(this.filePath, 'utf-8');
@@ -22,14 +19,13 @@ class ServerConfig {
         }
     }
 
-    public async saveConfig(): Promise<void> {
+    async saveConfig() {
         try {
             await fs.writeFile(this.filePath, JSON.stringify(this.saveableConfig, null, 4));
         } catch (error) {
             console.error('Error saving config:', error);
         }
     }
-
 }
 
-
+module.exports = ServerConfig;
