@@ -1,7 +1,7 @@
 const client = require('./discord_tools/client');
 const MyDiscordHelperPerServer = require('./discord_tools/server_class');
 const { Events, ChannelType } = require('discord.js');
-const { openAiChat } = require('./ai_tools/chatbot');
+const { openAiChat, getAiResponse } = require('./ai_tools/chatbot');
 
 // bot logged in
 client.once(Events.ClientReady, async (readyClient) => {
@@ -30,6 +30,22 @@ client.on(Events.GuildMemberRemove, async (member) => {
 // message sent to server
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.id == client.user?.id) return;
+
+  
+  if (message.author.id == "716390085896962058" && message.embeds.length > 0) {
+    const embeded = message.embeds[0];
+    const eTitle = embeded.title;
+    const imgUrl = embeded.image?.url; // Pobierz URL obrazu
+    
+    if (!eTitle || !imgUrl || (!eTitle.startsWith("A wild") && !eTitle.startsWith("Wild"))) {
+      return;
+    }
+
+    const prompt = `opisz w 4-10 wyrazach zwierzę i wymyśl mu zabawną nazwę twierdząc pewnie, że się tak nazywa. Przykład: "Zapakowany jeżowcowy kudłacz - To Zębaty Ziemniak."`
+    const responseText = await getAiResponse(prompt, [], [imgUrl], "");
+
+    await message.reply(responseText, { mentionAuthor: false });
+  }
 
   const actionHanlder = MyDiscordHelperPerServer.get(message.guild?.id);
   if (await actionHanlder?.protectChannel(message)) return;
