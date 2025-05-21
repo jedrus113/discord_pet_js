@@ -1,7 +1,6 @@
-const { Message, Collection } = require('discord.js');
 
 const openai = require('./client');
-const client = require('../discord_tools/client');
+const { log } = require('../utils/logger');
 
 async function getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowlageBase) {
     console.log(`Prompt: ${prompt}`);
@@ -73,7 +72,17 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
     const timestamp = new Date(message.createdTimestamp).toLocaleString();
     const prompt = `Otrzymałeś nową wiadomość.\nData: ${timestamp}\nNa kanale\n${channelDataPrompt}\nOd\nUser ID: ${message.author.id}\nNickname: ${message.author.username}\nDisplay name: ${message.author.displayName}\nMessage:\n${message.content}`;
 
-    return await getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowlageBase) || "Nie udało się uzyskac odpowiedzi. Szczerbatek śpi??? czy coś :/ Wołać andrew!";
+    try {
+        return await getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowlageBase) || "Nie udało się uzyskac odpowiedzi. Szczerbatek śpi??? czy coś :/ Wołać andrew!";
+    } catch (error) {
+      log(`Error while processing message possibly due to images ${allImageUrls}:\n${error}\n\nRetrying without images...`);
+      try {
+        return await getAiResponse(prompt, openaiHistoryMessages, [], knowlageBase) || "Nie udało się uzyskac odpowiedzi po błędzie. :/ Wołać andrew!";
+      } catch {
+        log(`Error while processing message possibly due to images ${allImageUrls}:\n${error}\n\nRetrying without images...`);
+        return "Fatal error. Both fail protections failed. @andrew please check the logs.";
+      }
+    }
 }
 
 module.exports = { getAiResponse, openAiChat };
