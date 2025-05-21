@@ -24,6 +24,7 @@ Thumbs.db
 
 # Conf directory
 conf/
+data_servers/
 
 # Temporary files
 *.tmp

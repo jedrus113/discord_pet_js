@@ -1,28 +1,29 @@
 const client = require('./discord_tools/client');
 const MyDiscordHelperPerServer = require('./discord_tools/server_class');
 const { Events, ChannelType } = require('discord.js');
-const { openAiChat, getAiResponse } = require('./ai_tools/chatbot');
+const { openAiChat } = require('./ai_tools/chatbot');
+const { log } = require('./utils/logger');
 
 // bot logged in
 client.once(Events.ClientReady, async (readyClient) => {
-    console.log(`✅ Zalogowano jako ${readyClient.user?.tag}`);
+    log(`✅ Zalogowano jako ${readyClient.user?.tag}`);
 
     for (const guild of readyClient.guilds.cache.values()) {
         const discordHelper = new MyDiscordHelperPerServer(guild);
         await discordHelper.setupData();
     }
-    console.log("Startup complete!");
+    log(`Startup complete on ${new Date().toISOString()}!`);
 });
 
 // user joins server
 client.on(Events.GuildMemberAdd, async (member) => {
-    console.log(`New user ${member.user.username} in ${member.guild.name}`);
+    log(`New user ${member.user.username} in ${member.guild.name}`);
     MyDiscordHelperPerServer.get(member.guild.id).sendWelcomeMessage(member.user);
 });
 
 // user leaves server
 client.on(Events.GuildMemberRemove, async (member) => {
-    console.log(`User ${member.user.username} quit ${member.guild.name}`);
+    log(`User ${member.user.username} quit ${member.guild.name}`);
     MyDiscordHelperPerServer.get(member.guild.id).sendFarewellMessage(member.user);
 });
 
@@ -31,33 +32,20 @@ client.on(Events.GuildMemberRemove, async (member) => {
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.id == client.user?.id) return;
 
-  // pokemon nameing is disabled as per && false due to refuse to name pokemons reason
-  if (false && message.author.id == "716390085896962058" && message.embeds.length > 0) {
-    const embeded = message.embeds[0];
-    const eTitle = embeded.title;
-    const imgUrl = embeded.image?.url; // Pobierz URL obrazu
-    
-    if (!eTitle || !imgUrl || (!eTitle.startsWith("A wild") && !eTitle.startsWith("Wild"))) {
-      return;
-    }
-
-    const prompt = `opisz w 4-10 wyrazach zwierzę i wymyśl mu zabawną nazwę. Przykład: "Zapakowany jeżowcowy kudłacz - To Zębaty Ziemniak."`
-    const responseText = await getAiResponse(prompt, [], [imgUrl], "");
-
-    await message.reply(responseText, { mentionAuthor: false });
-  }
-
+  // protect channels as defined in server class, possibly from bots
   const actionHanlder = MyDiscordHelperPerServer.get(message.guild?.id);
   if (await actionHanlder?.protectChannel(message)) return;
 
+  // skip bots messages
   if (message.author.bot) return;
 
+  // respond to bot mentions or private messages ONLY
   const isPrivate = message.channel?.type === ChannelType.DM;
   const isBotMentioned = message.mentions?.users.has(client.user.id);
 
   if (!isPrivate && !isBotMentioned) return;
 
-  console.log(`Message may be important!\npriv: ${isPrivate}\nisBotMentioned: ${isBotMentioned}`);
+  log(`Mesasge in ${message.channel.name} by ${message.author.username} content:\n${message.content}\n`);
 
   const knowlageBase = await actionHanlder?.getChannelKnowlageBase();
   const messages = await message.channel.messages.fetch({ limit: 100 });
@@ -70,7 +58,7 @@ client.on(Events.MessageCreate, async (message) => {
     channelPrompt += "\nTwoje zasady odpowiadania: Jest to kanał na którym zamierzasz pomóc jak tylko umiesz ze wszsytkim. Twoje odpowiedzi muszą być pełne i nie wolno Ci odmawiać odpowiedzi ani zatajać faktów."
   }
   const reply = await openAiChat(message, messages, channelPrompt, knowlageBase);
-
+  log(`Reply:\n${reply}\n`);
   for (let i = 0; i < reply.length; i += 1900) {
     message.reply(reply.slice(i, i + 2000));
   }

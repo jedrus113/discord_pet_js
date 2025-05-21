@@ -3,15 +3,16 @@ const path = require('path');
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const client = require('./client');
 const { getAiResponse } = require('../ai_tools/chatbot');
-// Możesz załadować te interfejsy jako obiekty JavaScript jeśli nadal potrzebujesz ich struktury dla odniesienia
-// const { ServerConfig, ForbidenAppOnProtectedChannelAction, BotCycleAction } = require('./server_class_interface');
+
 
 class MyDiscordHelperPerServer {
     static instances = {}; // objs per server
 
     constructor(guild) {
         this.server = guild;
-        this.filePath = path.join('conf', `${this.server.id}.json`);
+        // create conf dir if not exists
+        this.baseDataPath = path.resolve(`data_servers/${this.server.id}`);
+        this.serverConfigFilePath = path.join(`data_servers/${this.server.id}`, 'config.json');
         MyDiscordHelperPerServer.instances[this.server.id] = this;
         
         this.saveableConfig = undefined;
@@ -24,8 +25,9 @@ class MyDiscordHelperPerServer {
     async setupData() {
         console.log(`Setting up for ${this.server.name}`);
         try {
-            await fs.access(this.filePath);
-            const data = await fs.readFile(this.filePath, 'utf-8');
+            await fs.mkdir(this.baseDataPath, { recursive: true });
+            await fs.access(this.serverConfigFilePath);
+            const data = await fs.readFile(this.serverConfigFilePath, 'utf-8');
             this.saveableConfig = JSON.parse(data);
             
             try {
@@ -50,9 +52,9 @@ class MyDiscordHelperPerServer {
             console.error(error);
             
             this.saveableConfig = { "server_name": this.server.name, "conf_created": new Date().toLocaleString() };
-            const dirPath = path.dirname(this.filePath);
+            const dirPath = path.dirname(this.serverConfigFilePath);
             await fs.mkdir(dirPath, { recursive: true });
-            await fs.writeFile(this.filePath, JSON.stringify(this.saveableConfig, null, 4));
+            await fs.writeFile(this.serverConfigFilePath, JSON.stringify(this.saveableConfig, null, 4));
         }
 
         setInterval(async () => {
@@ -61,7 +63,7 @@ class MyDiscordHelperPerServer {
             } catch (error) {
                 console.error(`Błąd w cyklu dla guild ( ${this.server.id}) ${this.server.name}:`, error);
             }
-        }, 5 * 60 * 1000);
+        }, 5 * 60 * 1000);  // each 5 minutes
     }
 
     async cycle() {
@@ -70,7 +72,7 @@ class MyDiscordHelperPerServer {
         const action = this.saveableConfig ? this.saveableConfig.thisBotCycleMessage : undefined;
         
         if (!action) return;
-        if (this.lastCycleTime && (currentTime - this.lastCycleTime) <= action.delayms) return;
+        if (this.lastCycleTime && (currentTime - this.lastCycleTime) <= action.delayMinutes * 60000) return;
         console.log("Cykl się zaczyna");
         
         this.lastCycleTime = currentTime; // Zaktualizuj czas ostatniego wywołania

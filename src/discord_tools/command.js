@@ -36,15 +36,18 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 	}
 
 	const serversListIds = [];
-	const directoryConfPath = path.join(__dirname, '../../conf');
-	const files = await fsPromises.readdir(directoryConfPath) 
-	// Filtruj pliki z rozszerzeniem .json i usuń końcówkę
-	files.forEach(file => {
-		if (path.extname(file) === '.json') {
-			const fileNameWithoutExtension = path.basename(file, '.json');
-			serversListIds.push(fileNameWithoutExtension);
-		}
-	});
+	const directoryConfPath = path.join(__dirname, '../../data_servers');
+	try {
+		const entries = await fsPromises.readdir(directoryConfPath, { withFileTypes: true });
+		entries.forEach(entry => {
+			if (entry.isDirectory() && entry.name !== 'general') {
+				serversListIds.push(entry.name);
+			}
+		});
+	} catch (error) {
+		console.error("Error while reading server configs");
+		console.error(error);
+	}
 	
 	// first clear old commands
 	console.log(`Started refreshing ${commands.length} application (/) commands on ${serversListIds.length} servers.`);

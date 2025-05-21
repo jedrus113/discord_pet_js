@@ -49,23 +49,15 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
         if (oldMessage.id == message.id) return;
         let content = oldMessage.cleanContent.trim();
         let embedsStr = "";
-        let embedsImageInputs = [];
         
         for (const embed of oldMessage.embeds) {
             embedsStr += `\n`;
             if (embed.title) embedsStr += `${embed.title}: `;
             embedsStr += `${embed.description}: `;
-            if (embed.image && embed.image.url) {
-                embedsImageInputs.push({
-                    type: 'image_url',
-                    image_url: { "url": embed.image.url },
-                });
-            }
         }
         if (embedsStr) content += `\n\nAttached Embeds to message:${embedsStr}`
 
         limit -= content.length;
-        limit -= 300 * embedsImageInputs.length;    // estimate lengh of tokens of images
         let role = "user";
         const timestamp = new Date(oldMessage.createdTimestamp).toLocaleString();
         let premessage = `Date: ${timestamp}\nUser ID: ${oldMessage.author.id}\nNickname: ${oldMessage.author.username}\nDisplay name: ${oldMessage.author.displayName}\nMessage:\n`;
@@ -74,7 +66,6 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
             role: role,
             content: [
                 { type: 'text', text: `${premessage}${content}`},
-                ...embedsImageInputs,
             ],
         });
     });
