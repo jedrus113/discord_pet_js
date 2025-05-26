@@ -1,15 +1,14 @@
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
-
 const SpotifyWebApi = require('spotify-web-api-node');
-const play = require('play-dl');
 
 
+// load required extractor
 const spotifyApi = new SpotifyWebApi({
-    clientId: '',
-    clientSecret: '',
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_SECRET,
 });
 
-// Funkcja autoryzująca, aby uzyskać dostęp do API Spotify
+
+// authenticate to spotify for API access to read playlists
 async function authorizeSpotify() {
     try {
         const data = await spotifyApi.clientCredentialsGrant();
@@ -19,11 +18,12 @@ async function authorizeSpotify() {
     }
 }
 
-// Funkcja pobierająca utwory z playlisty Spotify
+
+// fetch playlist songs
 async function getSpotifyPlaylistTracks(playlist_spotify_url) {
     await authorizeSpotify();
 
-    // Pobieranie Spotify ID z URL
+    // Fetch Spotify ID from URL
     const regex = /playlist\/([a-zA-Z0-9]+)/;
     const match = playlist_spotify_url.match(regex);
     if (!match || match.length < 2) {
@@ -45,53 +45,7 @@ async function getSpotifyPlaylistTracks(playlist_spotify_url) {
     }
 }
 
-async function playFromSpotifyPlaylist(connection, playlist_spotify_url) {
-    const tracks = await getSpotifyPlaylistTracks(playlist_spotify_url);
-    console.log(`Pobrano ${tracks.length} utworów z playlisty Spotify.`);
-    await playFromSpotifyData(connection, tracks[0].name, tracks[0].artist);
-}
-
-async function playFromSpotifyData(connection, title, artist) {
-    const query = `${title} ${artist}`;
-    console.log(`Wyszukiwanie: ${query}`);
-  
-    try {
-      const searchResults = await play.search(query, { limit: 1 });
-      if (searchResults.length === 0) {
-        console.error("Nie znaleziono utworu na YouTube.");
-        return;
-      }
-      console.log(`znaleziono (${searchResults.length})): ${searchResults}`);
-  
-      console.log(`Gram: ${searchResults[0]}`);
-      const video = searchResults[0];
-      console.log(`play video.url: ${video.url}`);
-      const stream = await play.stream(video.url);
-      console.log(`createAudioResource: ${stream.type}`);
-      const resource = createAudioResource(stream.stream, { inputType: stream.type });
-      console.log(`resource created: ${resource}`);
-
-      const player = createAudioPlayer();
-      connection.subscribe(player);
-      player.play(resource);
-  
-      player.on(AudioPlayerStatus.Playing, () => {
-        console.log(`Odtwarzanie: ${video.title}`);
-      });
-  
-      player.on('error', error => {
-        console.error(`Błąd odtwarzania: ${error.message}`);
-      });
-  
-    } catch (error) {
-      console.error(error);
-      console.error("Wystąpił błąd podczas odtwarzania utworu.");
-    }
-}
-
 
 module.exports = {
-    playFromSpotifyPlaylist,
     getSpotifyPlaylistTracks,
-    playFromSpotifyData
 };

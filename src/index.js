@@ -4,6 +4,11 @@ const { Events, ChannelType } = require('discord.js');
 const { openAiChat } = require('./ai_tools/chatbot');
 const { log } = require('./utils/logger');
 
+// run requirements setup initiation
+require('./discord_tools/command')
+require('./music_tools/playlist')
+
+
 // bot logged in
 client.once(Events.ClientReady, async (readyClient) => {
     log(`✅ Zalogowano jako ${readyClient.user?.tag}`);
