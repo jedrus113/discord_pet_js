@@ -1,8 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, Partials, Collection, Events } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Collection, Events, MessageFlags } = require('discord.js');
 const dotenv = require('dotenv');
 require('./command')
+const { log } = require('../utils/logger');
 
 dotenv.config();
 
@@ -45,14 +46,15 @@ client.on(Events.InteractionCreate, async interaction => {
 	const command = interaction.client.commands.get(interaction.commandName);
 
 	if (!command) {
-		console.error(`No command matching ${interaction.commandName} was found.`);
+		log(`No command matching ${interaction.commandName} was found.`);
+		await interaction.reply({ content: 'There was an error while executing this command! : No command found.', flags: MessageFlags.Ephemeral });
 		return;
 	}
 
 	try {
 		await command.execute(interaction);
 	} catch (error) {
-		console.error(error);
+		log(error);
 		if (interaction.replied || interaction.deferred) {
 			await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
 		} else {
