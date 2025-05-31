@@ -55,7 +55,7 @@ client.on(Events.MessageCreate, async (message) => {
   if (messageLengthLvl == 1) {
     channelPrompt += "\nTwoje zasady odpowiadania: Jest to kanał na którym nie wolno Ci spamować. Twoje odpowiedzi muszą być krótkie tj. jedno krótkie zdanie sporadycznie bardzo żadko ciut więcej."
   } else if (messageLengthLvl == 3) {
-    channelPrompt += "\nTwoje zasady odpowiadania: Jest to kanał na którym zamierzasz pomóc jak tylko umiesz ze wszsytkim. Twoje odpowiedzi muszą być pełne i nie wolno Ci odmawiać odpowiedzi ani zatajać faktów."
+    channelPrompt += "\nTwoje zasady odpowiadania: Jest to kanał na którym zamierzasz odpisać zgodnie z oczekiwaniami rozmowy, jak tylko umiesz ze wszsytkim i w pełni."
   }
   const reply = await openAiChat(message, messages, channelPrompt, knowlageBase);
   log(`Reply:\n${reply}\n`);
