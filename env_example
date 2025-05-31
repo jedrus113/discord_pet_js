@@ -3,15 +3,5 @@
 DISCORD_TOKEN=
 DISCORD_CLIENT_ID=
 
-
-# OpenAI API key for music playlist fether
-SPOTIFY_CLIENT_ID=
-SPOTIFY_SECRET=
-
-
-# OpenAI API key for AI chatting
+# OpenAI API key
 OPENAI_API_KEY=
-
-
-# additional suggested stuff
-YTDL_NO_UPDATE=1
