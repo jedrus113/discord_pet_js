@@ -47,7 +47,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 	if (!command) {
 		log(`No command matching ${interaction.commandName} was found.`);
-		await interaction.reply({ content: 'There was an error while executing this command! : No command found.', flags: MessageFlags.Ephemeral });
+		// await interaction.reply({ content: 'There was an error while executing this command! : No command found.', flags: MessageFlags.Ephemeral });
 		return;
 	}
 
