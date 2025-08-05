@@ -8,9 +8,6 @@ const client = require('../discord_tools/client');
 const player = new Player(client, {
     registerDefaultCommands: false,
 });
-(async () => {
-await player.extractors.register(YoutubeiExtractor);
-})
 
 async function addSongToPlaylist(queue, title, artist) {
     const query = `${title} ${artist}`;
@@ -19,37 +16,43 @@ async function addSongToPlaylist(queue, title, artist) {
     try {
         await queue.play(url);
     } catch (error) {
-        console.log(error);
+        console.warn(error);
     }
 
 }
 
 async function makeQueThenJoin(guild, voiceChannel) {
+    await player.extractors.register(YoutubeiExtractor);
     const queue = player.nodes.create(guild);
     return await queue.connect(voiceChannel);
 }
 
 
-player.events.on(GuildQueueEvent.PlayerStart, async (queue, track) => {
-    console.log(`Now playing: ${track.title}`);
-});
+(async () => {
+    //await player.extractors.register(YoutubeiExtractor);
+console.log("EXTRASKTOR USTAWIONY!")
 
-// Handle the event when a track finishes playing
-player.events.on(GuildQueueEvent.PlayerFinish, async (queue, track) => {
-    console.log(`Finished playing ${track.title}`);
-});
+    player.events.on(GuildQueueEvent.PlayerStart, async (queue, track) => {
+        console.log(`Now playing: ${track.title}`);
+    });
 
-player.events.on('error', (queue, error) => {
-    // Emitted when the player queue encounters error
-    console.log(`General player error event: ${error.message}`);
-    console.log(error);
-});
+    // Handle the event when a track finishes playing
+    player.events.on(GuildQueueEvent.PlayerFinish, async (queue, track) => {
+        console.log(`Finished playing ${track.title}`);
+    });
 
-player.events.on('playerError', (queue, error) => {
-    // Emitted when the audio player errors while streaming audio track
-    console.log(`Player error event: ${error.message}`);
-    console.log(error);
-});
+    player.events.on('error', (queue, error) => {
+        // Emitted when the player queue encounters error
+        console.log(`General player error event: ${error.message}`);
+        console.log(error);
+    });
+
+    player.events.on('playerError', (queue, error) => {
+        // Emitted when the audio player errors while streaming audio track
+        console.log(`Player error event: ${error.message}`);
+        console.log(error);
+    });
+})();
 
 
 module.exports = {

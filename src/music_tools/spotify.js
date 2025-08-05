@@ -31,18 +31,29 @@ async function getSpotifyPlaylistTracks(playlist_spotify_url) {
     }
     const playlistId = match[1];
 
-    try {
-        const data = await spotifyApi.getPlaylistTracks(playlistId);
-        return data.body.items.map(item => ({
-            track: item.track,
-            name: item.track.name,
-            artist: item.track.artists.map(artist => artist.name).join(', '),
-            url: item.track.external_urls.spotify // URL do Spotify
-        }));
-    } catch (err) {
-        console.error('Nie udało się pobrać utworów z playlisty Spotify:', err);
-        throw err;
+    let offset = 0;
+    let allTracks = [];
+    let limit = 100;
+    while(true)
+    {
+        try {
+            const data = await spotifyApi.getPlaylistTracks(playlistId, { limit, offset });
+
+            const newList = data.body.items.map(item => ({
+                track: item.track,
+                name: item.track.name,
+                artist: item.track.artists.map(artist => artist.name).join(', '),
+                url: item.track.external_urls.spotify // URL do Spotify
+            }));
+            allTracks.push(...newList);
+            if (data.body.items.length < limit) break;
+            offset += limit;
+        } catch (err) {
+            console.error('Nie udało się pobrać utworów z playlisty Spotify:', err);
+            throw err;
+        }
     }
+    return allTracks;
 }
 
 

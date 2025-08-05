@@ -27,6 +27,6 @@ module.exports = {
         for (let track of tracks) {
             await addSongToPlaylist(queue, track.name, track.artist);
         }
-        reply_message.reply_message("Nie ręczę za efekty, ale coś się udało znaleźć...")
+        await interaction.followUp("Nie ręczę za efekty, ale coś się udało znaleźć...")
     },
 };
