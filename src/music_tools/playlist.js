@@ -16,6 +16,19 @@ async function addSongToPlaylist(queue, title, artist) {
     try {
         await queue.play(url);
     } catch (error) {
+        console.warn("ERRO WHILE PLAYING")
+        console.warn(error);
+    }
+
+}
+
+async function addYTSongToPlaylist(queue, yt_link) {
+    const url = yt_link;
+    console.log(`adds to ques YT - ${url}`)
+    try {
+        await queue.play(url);
+    } catch (error) {
+        console.warn("ERRO WHILE PLAYING")
         console.warn(error);
     }
 
@@ -24,13 +37,24 @@ async function addSongToPlaylist(queue, title, artist) {
 async function makeQueThenJoin(guild, voiceChannel) {
     await player.extractors.register(YoutubeiExtractor);
     const queue = player.nodes.create(guild);
+
+    process.on('uncaughtException', (err) => {
+        console.error('Unhandled Exception:', err);
+        queue.skip();
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+        console.error('Unhandled Promise rejection:', reason);
+        queue.skip();
+    });
+
     return await queue.connect(voiceChannel);
 }
 
 
 (async () => {
     //await player.extractors.register(YoutubeiExtractor);
-console.log("EXTRASKTOR USTAWIONY!")
+    console.log("EXTRASKTOR USTAWIONY!")
 
     player.events.on(GuildQueueEvent.PlayerStart, async (queue, track) => {
         console.log(`Now playing: ${track.title}`);
@@ -51,11 +75,13 @@ console.log("EXTRASKTOR USTAWIONY!")
         // Emitted when the audio player errors while streaming audio track
         console.log(`Player error event: ${error.message}`);
         console.log(error);
+        queue.skip();
     });
 })();
 
 
 module.exports = {
     addSongToPlaylist,
+    addYTSongToPlaylist,
     makeQueThenJoin,
 };
