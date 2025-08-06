@@ -1,7 +1,7 @@
 const { Player, GuildQueueEvent  } = require('discord-player');
 const { DefaultExtractors } = require('@discord-player/extractor');
 const { YoutubeiExtractor } = require('discord-player-youtubei')
-const { findYoutubeUrl, extractYoutubePlaylistUrls } = require('./youtube')
+const { findYoutubeUrl } = require('./youtube')
 const client = require('../discord_tools/client');
 
 
@@ -57,12 +57,12 @@ async function makeQueThenJoin(guild, voiceChannel) {
 
     process.on('uncaughtException', (err) => {
         console.error('Unhandled Exception:', err);
-        queue.skip();
+        queue.node.skip();
     });
 
     process.on('unhandledRejection', (reason, promise) => {
         console.error('Unhandled Promise rejection:', reason);
-        queue.skip();
+        queue.node.skip();
     });
 
     return await queue.connect(voiceChannel);
@@ -92,7 +92,7 @@ async function makeQueThenJoin(guild, voiceChannel) {
         // Emitted when the audio player errors while streaming audio track
         console.log(`Player error event: ${error.message}`);
         console.log(error);
-        queue.skip();
+        queue.node.skip();
     });
 })();
 
