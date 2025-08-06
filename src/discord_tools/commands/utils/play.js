@@ -40,12 +40,12 @@ module.exports = {
         }
 
         if (detectUrlType(playlistUrl) == "youtube_playlist") {
+            await interaction.reply(`Dodaję utwory z playlisty YT ${playlistUrl} na kanał <#${voiceChannel.id}>`);
             try {
                 await addYTPlaylist(queue, playlistUrl);
-                await interaction.reply(`Dodaję utwory z playlisty YT na kanał <#${voiceChannel.id}>`);
             } catch (err) {
                 console.warn("Błąd przy odtwarzaniu playlisty YT:", err.message);
-                await interaction.reply("Nie udało się odtworzyć playlisty z YouTube.");
+                await interaction.followUp("Nie udało się odtworzyć playlisty z YouTube.");
             }
             return;
         }
