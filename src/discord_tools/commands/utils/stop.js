@@ -11,21 +11,21 @@ module.exports = {
         const voiceChannel = interaction.member.voice.channel;
         
         if (!voiceChannel) {
-            return await interaction.reply('Wejdź na kanał głosowy!1111!');
+            return await interaction.reply('Nie jestem na kanale głosowym');
         }
 
         const queue = player.nodes.get(interaction.guild);
         
         if (!queue) {
-            return await interaction.reply('chyba nie ma kolejki nie rozumiem tego');
+            return await interaction.reply('Jakiś problem z kolejką, nie ma.');
         }
 
         try {
-            queue.stop();
+            queue.delete();
             
-            await interaction.reply('muzyczka zatrzymana ');
+            await interaction.reply('Agoxu własnoręcznie zatrzymał muzykę.');
         } catch (error) {
-            await interaction.reply('idk jak tu sie handluje errory' + error);
+            await interaction.reply('Error: ' + error);
         }
     },
 }; 
