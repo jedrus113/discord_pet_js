@@ -84,4 +84,5 @@ module.exports = {
     addSongToPlaylist,
     addYTSongToPlaylist,
     makeQueThenJoin,
+    player,
 };
