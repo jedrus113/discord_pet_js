@@ -21,7 +21,7 @@ module.exports = {
         }
 
         try {
-            queue.skip();
+            queue.node.skip();
             
             await interaction.reply('Skip..');
         } catch (error) {
