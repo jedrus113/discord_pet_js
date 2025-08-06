@@ -1,11 +1,13 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getSpotifyPlaylistTracks } = require('../../../music_tools/spotify');
-const { addSongToPlaylist, addYTSongToPlaylist, makeQueThenJoin } = require('../../../music_tools/playlist');
+const { addSongToPlaylist, addYTSongToPlaylist, makeQueThenJoin, addYTPlaylist } = require('../../../music_tools/playlist');
 
 
 function detectUrlType(url) {
     if (url.includes('spotify.com')) {
         return 'spotify';
+    } else if ((url.includes('youtube.com') && url.includes('list=')) || (url.includes('youtu.be') && url.includes('list='))) {
+        return 'youtube_playlist';
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         return 'youtube';
     } else {
@@ -35,6 +37,17 @@ module.exports = {
             }
             const reply_message = await interaction.reply(`Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${playlistUrl}`);
             return
+        }
+
+        if (detectUrlType(playlistUrl) == "youtube_playlist") {
+            try {
+                await addYTPlaylist(queue, playlistUrl);
+                await interaction.reply(`Dodaję utwory z playlisty YT na kanał <#${voiceChannel.id}>`);
+            } catch (err) {
+                console.warn("Błąd przy odtwarzaniu playlisty YT:", err.message);
+                await interaction.reply("Nie udało się odtworzyć playlisty z YouTube.");
+            }
+            return;
         }
 
         const tracks = await getSpotifyPlaylistTracks(playlistUrl);

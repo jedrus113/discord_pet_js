@@ -1,7 +1,7 @@
 const { Player, GuildQueueEvent  } = require('discord-player');
 const { DefaultExtractors } = require('@discord-player/extractor');
 const { YoutubeiExtractor } = require('discord-player-youtubei')
-const { findYoutubeUrl } = require('./youtube')
+const { findYoutubeUrl, extractYoutubePlaylistUrls } = require('./youtube')
 const client = require('../discord_tools/client');
 
 
@@ -32,6 +32,23 @@ async function addYTSongToPlaylist(queue, yt_link) {
         console.warn(error);
     }
 
+}
+
+async function addYTPlaylist(queue, playlistUrl) {
+    try {
+        const urls = await extractYoutubePlaylistUrls(playlistUrl);
+        console.log(`Dodano ${urls.length} utworów z playlisty YT: ${playlistUrl}`);
+        for (let url of urls) {
+            try {
+                console.log(`Dodaję do kolejki: ${url}`);
+                await queue.play(url);
+            } catch (err) {
+                console.warn("Błąd przy dodawaniu utworu z YT playlisty:", err.message);
+            }
+        }
+    } catch (err) {
+        console.warn("Błąd podczas pobierania playlisty YT:", err.message);
+    }
 }
 
 async function makeQueThenJoin(guild, voiceChannel) {
@@ -84,5 +101,6 @@ module.exports = {
     addSongToPlaylist,
     addYTSongToPlaylist,
     makeQueThenJoin,
+    addYTPlaylist,
     player,
 };
