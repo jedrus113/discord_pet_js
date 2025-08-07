@@ -3,7 +3,7 @@ const fsPromises = require('node:fs').promises;
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
-
+const buttonHandlers = require('./commands/utils/buttonHandlers');
 const client = require('./client');
 
 dotenv.config();
@@ -32,23 +32,47 @@ for (const folder of commandFolders) {
 
 
 client.on(Events.InteractionCreate, async interaction => {
-	if (!interaction.isChatInputCommand()) return;
+	if (interaction.isChatInputCommand()) {
+		const command = interaction.client.commands.get(interaction.commandName);
 
-	const command = interaction.client.commands.get(interaction.commandName);
+		if (!command) {
+			console.error(`No command matching ${interaction.commandName} was found.`);
+			return;
+		}
 
-	if (!command) {
-		console.error(`No command matching ${interaction.commandName} was found.`);
-		return;
+		try {
+			await command.execute(interaction);
+		} catch (error) {
+			console.error(error);
+			if (interaction.replied || interaction.deferred) {
+				await interaction.followUp({ content: 'Wystąpił błąd przy wykonywaniu komendy!', ephemeral: true });
+			} else {
+				await interaction.reply({ content: 'Wystąpił błąd przy wykonywaniu komendy!', ephemeral: true });
+			}
+		}
 	}
+	else if (interaction.isButton()) {
+		const { customId } = interaction;
 
-	try {
-		await command.execute(interaction);
-	} catch (error) {
-		console.error(error);
-		if (interaction.replied || interaction.deferred) {
-			await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
-		} else {
-			await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+		try {
+			switch (customId) {
+				case 'skip':
+					await buttonHandlers.handleSkip(interaction);
+					break;
+				case 'stop':
+					await buttonHandlers.handleStop(interaction);
+					break;
+				case 'pause':
+					await buttonHandlers.handlePause(interaction);
+					break;
+				default:
+					await interaction.reply({ content: 'Nieznany przycisk.', ephemeral: true });
+			}
+		} catch (error) {
+			console.error("Błąd obsługi przycisku:", error);
+			if (!interaction.replied) {
+				await interaction.reply({ content: 'Wystąpił błąd podczas obsługi przycisku.', ephemeral: true });
+			}
 		}
 	}
 });

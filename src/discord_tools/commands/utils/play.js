@@ -1,7 +1,25 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getSpotifyPlaylistTracks } = require('../../../music_tools/spotify');
 const { addSongToPlaylist, addYTSongToPlaylist, makeQueThenJoin, addYTPlaylist } = require('../../../music_tools/playlist');
 
+function createMusicControlButtons() {
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('skip')
+                .setLabel('⏭️ Skip')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('stop')
+                .setLabel('⏹️ Stop')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('pause')
+                .setLabel('⏸️ Pause/Resume')
+                .setStyle(ButtonStyle.Primary)
+        );
+    return row;
+}
 
 function detectUrlType(url) {
     if (url.includes('spotify.com')) {
@@ -35,12 +53,16 @@ module.exports = {
             } catch (err) {
                 console.warn("ERROR SPOTTETD2! \n\n\n\n\n ERROR SPOSTETS2 \n\n", err.message )
             }
-            const reply_message = await interaction.reply(`Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${playlistUrl}`);
+            const reply_message = await interaction.reply({content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${playlistUrl}`
+                ,components: [createMusicControlButtons()]
+            });
             return
         }
 
         if (detectUrlType(playlistUrl) == "youtube_playlist") {
-            await interaction.reply(`Dodaję utwory z playlisty YT ${playlistUrl} na kanał <#${voiceChannel.id}>`);
+            await interaction.reply({content: `Dodaję utwory z playlisty YT ${playlistUrl} na kanał <#${voiceChannel.id}>`,
+                components: [createMusicControlButtons()]
+            });
             try {
                 await addYTPlaylist(queue, playlistUrl);
             } catch (err) {
@@ -51,7 +73,10 @@ module.exports = {
         }
 
         const tracks = await getSpotifyPlaylistTracks(playlistUrl);
-        const reply_message = await interaction.reply(`Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${tracks.length} kawałków z playlisty ${playlistUrl}`);
+        const reply_message = await interaction.reply({
+            content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${tracks.length} kawałków z playlisty ${playlistUrl}`,
+            components: [createMusicControlButtons()]
+        });
         
         console.log(`Pobrano ${tracks.length} utworów z playlisty Spotify.`);
 
