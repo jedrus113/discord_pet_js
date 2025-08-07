@@ -53,7 +53,11 @@ async function addYTPlaylist(queue, playlistUrl) {
 
 async function makeQueThenJoin(guild, voiceChannel) {
     await player.extractors.register(YoutubeiExtractor);
-    const queue = player.nodes.create(guild);
+
+    let queue = player.nodes.get(interaction.guild);
+    if (!queue) {
+        queue = player.nodes.create(guild);
+    }
 
     process.on('uncaughtException', (err) => {
         console.error('Unhandled Exception:', err);
