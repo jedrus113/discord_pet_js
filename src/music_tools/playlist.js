@@ -33,7 +33,7 @@ async function addSongToPlaylist(queue, title, artist) {
     try {
         await queue.play(url);
     } catch (error) {
-        console.warn("ERRO WHILE PLAYING")
+        console.warn("ERRO WHILE PLAYING PLAYLIST")
         console.warn(error);
     }
 
@@ -45,7 +45,7 @@ async function addYTSongToPlaylist(queue, yt_link) {
     try {
         await queue.play(url);
     } catch (error) {
-        console.warn("ERRO WHILE PLAYING")
+        console.warn("ERRO WHILE PLAYING YT SPMG TP ")
         console.warn(error);
     }
 
@@ -72,10 +72,7 @@ async function makeQueThenJoin(guild, voiceChannel) {
     await player.extractors.register(YoutubeiExtractor);
     await player.extractors.register(SoundcloudExtractor);
 
-    let queue = player.nodes.get(guild);
-    if (!queue) {
-        queue = player.nodes.create(guild);
-    }
+    let queue = player.nodes.create(guild);
 
     process.on('uncaughtException', (err) => {
         console.error('Unhandled Exception:', err);
@@ -87,14 +84,13 @@ async function makeQueThenJoin(guild, voiceChannel) {
         queue.node.skip();
     });
 
-    if (!queue.connection) {
-        try {
-            return await queue.connect(voiceChannel);
-        } catch (error) {
-            console.error("Error connecting to voice channel:", error);
-            throw error;
-        }
+    try {
+        return await queue.connect(voiceChannel);
+    } catch (error) {
+        console.error("Error connecting to voice channel:", error);
+        throw error;
     }
+
 }
 
 

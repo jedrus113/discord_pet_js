@@ -48,12 +48,13 @@ module.exports = {
         const queue = await makeQueThenJoin(interaction.guild, voiceChannel)
 
         if (detectUrlType(playlistUrl) == "youtube") {
+            await interaction.reply("Starging spotify");
             try {
                 await addYTSongToPlaylist(queue, playlistUrl);
             } catch (err) {
                 console.warn("ERROR SPOTTETD2! \n\n\n\n\n ERROR SPOSTETS2 \n\n", err.message )
             }
-            const reply_message = await interaction.reply({content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${playlistUrl}`
+            await interaction.editReply({content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${playlistUrl}`
                 ,components: [createMusicControlButtons()]
             });
             return
@@ -72,8 +73,9 @@ module.exports = {
             return;
         }
 
+        const reply_message = await interaction.reply("Starging spotify");
         const tracks = await getSpotifyPlaylistTracks(playlistUrl);
-        const reply_message = await interaction.reply({
+        await interaction.editReply({
             content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${tracks.length} kawałków z playlisty ${playlistUrl}`,
             components: [createMusicControlButtons()]
         });
