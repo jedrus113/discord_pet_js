@@ -1,13 +1,30 @@
 const { Player, GuildQueueEvent  } = require('discord-player');
 const { DefaultExtractors } = require('@discord-player/extractor');
 const { YoutubeiExtractor } = require('discord-player-youtubei')
+const { SoundcloudExtractor } = require('discord-player-soundcloud');
 const { findYoutubeUrl } = require('./youtube')
+const { findSoundCloudUrl } = require('./soundcloud');
 const client = require('../discord_tools/client');
 
 
 const player = new Player(client, {
     registerDefaultCommands: false,
 });
+
+async function addSoundCloudSongToPlaylist(queue, title, artist) {
+    const query = `${artist} ${title}`;
+    const url = await findSoundCloudUrl(query);
+    if (!url) {
+        console.warn("No SoundCloud track found.");
+        return;
+    }
+    try {
+        await queue.play(url);
+    } catch (error) {
+        console.warn("Error while playing SoundCloud track");
+        console.warn(error);
+    }
+}
 
 async function addSongToPlaylist(queue, title, artist) {
     const query = `${title} ${artist}`;
@@ -53,6 +70,7 @@ async function addYTPlaylist(queue, playlistUrl) {
 
 async function makeQueThenJoin(guild, voiceChannel) {
     await player.extractors.register(YoutubeiExtractor);
+    await player.extractors.register(SoundcloudExtractor);
 
     let queue = player.nodes.get(guild);
     if (!queue) {
@@ -69,7 +87,14 @@ async function makeQueThenJoin(guild, voiceChannel) {
         queue.node.skip();
     });
 
-    return await queue.connect(voiceChannel);
+    if (!queue.connection) {
+        try {
+            return await queue.connect(voiceChannel);
+        } catch (error) {
+            console.error("Error connecting to voice channel:", error);
+            throw error;
+        }
+    }
 }
 
 
@@ -106,5 +131,6 @@ module.exports = {
     addYTSongToPlaylist,
     makeQueThenJoin,
     addYTPlaylist,
+    addSoundCloudSongToPlaylist,
     player,
 };

@@ -22,6 +22,12 @@ sudo apt install nodejs npm
 npm install
 ```
 
+3. (5) Install ffmpeg.
+Windows:
+    winget install ffmpeg
+Linux:
+    sudo apt install ffmpeg
+
 4. Setup variables
 - rename `env_example` to `.env` and put required secrets inside
 
