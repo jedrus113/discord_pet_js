@@ -54,7 +54,7 @@ async function addYTPlaylist(queue, playlistUrl) {
 async function makeQueThenJoin(guild, voiceChannel) {
     await player.extractors.register(YoutubeiExtractor);
 
-    let queue = player.nodes.get(interaction.guild);
+    let queue = player.nodes.get(guild);
     if (!queue) {
         queue = player.nodes.create(guild);
     }
