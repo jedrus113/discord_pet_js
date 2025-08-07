@@ -90,6 +90,11 @@ class MyDiscordHelperPerServer {
         return MyDiscordHelperPerServer.instances[guild_id];
     }
 
+    async sendJustMessage(message, channelId) {
+        const channel = await this.server.channels.fetch(channelId);
+        await channel.send(message);
+    }
+
     async sendWelcomeMessage(user) {
         if (!this.channelWelcome) {
             console.error(`Missing welcome channel for server (${this.server.id}) ${this.server.name}`);
