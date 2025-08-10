@@ -2,7 +2,7 @@ const { Player, GuildQueueEvent  } = require('discord-player');
 const { DefaultExtractors } = require('@discord-player/extractor');
 const { YoutubeiExtractor } = require('discord-player-youtubei')
 const { SoundcloudExtractor } = require('discord-player-soundcloud');
-const { findYoutubeUrl } = require('./youtube')
+const { findYoutubeUrl, extractYoutubePlaylistUrls } = require('./youtube')
 const { findSoundCloudUrl } = require('./soundcloud');
 const client = require('../discord_tools/client');
 
