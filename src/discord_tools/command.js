@@ -3,7 +3,6 @@ const fsPromises = require('node:fs').promises;
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
-const buttonHandlers = require('./commands/utils/buttonHandlers');
 const client = require('./client');
 
 dotenv.config();
@@ -48,30 +47,6 @@ client.on(Events.InteractionCreate, async interaction => {
 				await interaction.followUp({ content: 'Wystąpił błąd przy wykonywaniu komendy!', ephemeral: true });
 			} else {
 				await interaction.reply({ content: 'Wystąpił błąd przy wykonywaniu komendy!', ephemeral: true });
-			}
-		}
-	}
-	else if (interaction.isButton()) {
-		const { customId } = interaction;
-
-		try {
-			switch (customId) {
-				case 'skip':
-					await buttonHandlers.handleSkip(interaction);
-					break;
-				case 'stop':
-					await buttonHandlers.handleStop(interaction);
-					break;
-				case 'pause':
-					await buttonHandlers.handlePause(interaction);
-					break;
-				default:
-					await interaction.reply({ content: 'Nieznany przycisk.', ephemeral: true });
-			}
-		} catch (error) {
-			console.error("Błąd obsługi przycisku:", error);
-			if (!interaction.replied) {
-				await interaction.reply({ content: 'Wystąpił błąd podczas obsługi przycisku.', ephemeral: true });
 			}
 		}
 	}

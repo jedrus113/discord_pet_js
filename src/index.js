@@ -4,7 +4,6 @@ const { log } = require('./utils/logger');
 
 // run requirements setup initiation
 require('./discord_tools/command')
-require('./music_tools/playlist')
 
 
 // bot logged in
