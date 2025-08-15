@@ -4,8 +4,8 @@ const player = require('../../../music_tools/player')
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('stop')
-        .setDescription('Ucisz szczerbatka'),
+        .setName('skip')
+        .setDescription('Pomiń Piosenke.'),
 
     async execute(interaction) {
         const voiceChannel = interaction.member.voice.channel;
