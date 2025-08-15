@@ -39,7 +39,7 @@ module.exports = {
 		.setDescription('Odtwórz playlistę ze Spotify lub muzyke z YT')
         .addStringOption(option => 
             option.setName('playlist_url')
-                .setDescription('URL playlisty Spotify')
+                .setDescription('URL playlisty Spotify / yt / single yt video')
                 .setRequired(true)),
 
 	async execute(interaction) {
@@ -48,7 +48,7 @@ module.exports = {
         const queue = await makeQueThenJoin(interaction.guild, voiceChannel)
 
         if (detectUrlType(playlistUrl) == "youtube") {
-            await interaction.reply("Starging spotify");
+            await interaction.reply("Starging yt");
             try {
                 await addYTSongToPlaylist(queue, playlistUrl);
             } catch (err) {
@@ -86,6 +86,7 @@ module.exports = {
         // play song / or add to queue
         for (let track of tracks) {
             try {
+                if(!queue.connection) break;
                 await addSongToPlaylist(queue, track.name, track.artist);
             } catch (err) {
                 console.warn("ERROR SPOTTETD! \n\n\n\n\n ERROR SPOSTETS \n\n", err.message )

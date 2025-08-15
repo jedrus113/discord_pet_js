@@ -11,6 +11,7 @@ const player = new Player(client, {
     registerDefaultCommands: false,
 });
 
+
 async function addSoundCloudSongToPlaylist(queue, title, artist) {
     const query = `${artist} ${title}`;
     const url = await findSoundCloudUrl(query);
@@ -58,6 +59,7 @@ async function addYTPlaylist(queue, playlistUrl) {
         for (let url of urls) {
             try {
                 console.log(`Dodaję do kolejki: ${url}`);
+                if(!queue.connection) break;
                 await queue.play(url);
             } catch (err) {
                 console.warn("Błąd przy dodawaniu utworu z YT playlisty:", err.message);
@@ -68,20 +70,14 @@ async function addYTPlaylist(queue, playlistUrl) {
     }
 }
 
+
 async function makeQueThenJoin(guild, voiceChannel) {
-    await player.extractors.register(YoutubeiExtractor);
-    await player.extractors.register(SoundcloudExtractor);
-
-    let queue = player.nodes.create(guild);
-
-    process.on('uncaughtException', (err) => {
-        console.error('Unhandled Exception:', err);
-        queue.node.skip();
-    });
-
-    process.on('unhandledRejection', (reason, promise) => {
-        console.error('Unhandled Promise rejection:', reason);
-        queue.node.skip();
+    let queue = player.nodes.create(guild, {
+        // player node options
+        leaveOnEmpty: true,               // bot leaves when voice channel is empty
+        leaveOnEmptyCooldown: 300000,     // 5 minutes in milliseconds
+        leaveOnEnd: true,                  // still leave when queue finishes
+        leaveOnEndCooldown: 0              // no extra delay after queue end
     });
 
     try {
@@ -90,11 +86,51 @@ async function makeQueThenJoin(guild, voiceChannel) {
         console.error("Error connecting to voice channel:", error);
         throw error;
     }
-
 }
 
 
+
+
+process.on('uncaughtException', (err) => {
+    console.error('Unhandled Exception:', err);
+
+    // iterate over guilds that have queues
+    for (const guildId of Object.keys(player.nodes.cache ?? {})) {
+        const queue = player.nodes.get(guildId);
+        if (queue) {
+            console.log(`Error on guild ${guildId}`);
+            //console.log(queue.currentTrack);
+            //console.log(queue.tracks.toArray());
+        }
+    }
+
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Promise rejection:', reason);
+
+    // iterate over guilds that have queues
+    for (const guildId of Object.keys(player.nodes.cache ?? {})) {
+        const queue = player.nodes.get(guildId);
+        if (queue) {
+            console.log(`Error on guild ${guildId}`);
+            //console.log(queue.currentTrack);
+            //console.log(queue.tracks.toArray());
+            //queue.node.skip();
+        }
+    }
+
+});
+
+
 (async () => {
+    await player.extractors.register(YoutubeiExtractor, {
+        streamOptions: { highWaterMark: 1 << 27 },  // large buffer (1 << 27 = 128MB)
+        //disablePlayer: true                         // use ANDROID client instead of web player
+        generateWithPoToken: true
+    });
+    //await player.extractors.register(SoundcloudExtractor);
+
     //await player.extractors.register(YoutubeiExtractor);
     console.log("EXTRASKTOR USTAWIONY!")
 
