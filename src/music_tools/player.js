@@ -34,7 +34,7 @@ class GuildPlayer {
                     if (this.connection && !this.isPlaying) {
                         this.connection.destroy();
                     }
-                }, 5000); // 5 minutes
+                }, 5000); // 5 seconds
             }
         });
 

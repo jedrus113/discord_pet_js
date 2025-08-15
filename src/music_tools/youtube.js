@@ -1,6 +1,10 @@
 const ytdl = require('@distube/ytdl-core');
 const ytSearch = require('yt-search');
 
+function isYoutubeUrl(url) {
+    return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url);
+}
+
 async function findYoutubeUrl(query) {
     console.log(`Wyszukiwanie: ${query}`);
     
@@ -14,8 +18,16 @@ async function findYoutubeUrl(query) {
     return video;
 }
 
-async function getStream(video) {
-    if (!video?.url) {
+async function getStream(input) {
+    let video;
+
+    if (typeof input === 'string' && isYoutubeUrl(input)) {
+        video = { url: input, title: 'Unknown' }; 
+    } 
+    else if (input?.url && isYoutubeUrl(input.url)) {
+        video = input;
+    } else {
+        console.error('Invalid video input. Must be a YouTube URL or a video object.');
         return null;
     }
 
@@ -40,5 +52,6 @@ async function getStream(video) {
 
 module.exports = {
     findYoutubeUrl,
-    getStream
+    getStream,
+    isYoutubeUrl
 };

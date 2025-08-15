@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getSpotifyPlaylistTracks } = require('../../../music_tools/spotify');
-const { getStream, findYoutubeUrl } = require('../../../music_tools/youtube');
+const { getStream, findYoutubeUrl, isYoutubeUrl } = require('../../../music_tools/youtube');
 const player = require('../../../music_tools/player');
 
 module.exports = {
@@ -28,6 +28,21 @@ module.exports = {
         } catch (error) {
             console.error(error);
             return interaction.reply({ content: 'Could not join the voice channel.', ephemeral: true });
+        }
+        
+        if (isYoutubeUrl(playlistUrl)) {
+            await interaction.reply(`Playing YouTube link in <#${voiceChannel.id}>...`);
+            try {
+                const streamData = await getStream(playlistUrl);
+                if (!streamData) {
+                    return interaction.editReply("Could not get a stream from the YouTube link.");
+                }
+                player.addToPlaylist(interaction.guild.id, streamData);
+                return interaction.followUp("Added YouTube track to the queue!");
+            } catch (err) {
+                console.error(err);
+                return interaction.editReply("An error occurred while trying to play the YouTube link.");
+            }
         }
         
         await interaction.reply("Reading playlist...");
