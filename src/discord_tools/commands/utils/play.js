@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, VoiceChannel } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { getSpotifyPlaylistTracks } = require('../../../music_tools/spotify');
-const { getStream, findYoutubeUrl } = require('../../../music_tools/youtube')
-const player = require('../../../music_tools/player')
+const { getStream, findYoutubeUrl } = require('../../../music_tools/youtube');
+const player = require('../../../music_tools/player');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -15,28 +15,55 @@ module.exports = {
 	async execute(interaction) {
         const playlistUrl = interaction.options.getString('playlist_url');
         const voiceChannel = interaction.member.voice.channel;
-        await player.joinChannel(VoiceChannel, interaction.guild.id, interaction.guild.voiceAdapterCreator);
 
-        const reply_message = await interaction.reply("Starging spotify");
+        if (!voiceChannel) {
+            return interaction.reply({ 
+                content: 'You must be in a voice channel to use this command!',
+                ephemeral: true 
+            });
+        }
+
+        try {
+            await player.joinChannel(voiceChannel.id, interaction.guild.id, interaction.guild.voiceAdapterCreator);
+        } catch (error) {
+            console.error(error);
+            return interaction.reply({ content: 'Could not join the voice channel.', ephemeral: true });
+        }
+        
+        await interaction.reply("Reading playlist...");
         const tracks = await getSpotifyPlaylistTracks(playlistUrl);
+
+        if (!tracks || tracks.length === 0) {
+            return interaction.editReply({ content: `Could not find any tracks for the playlist: ${playlistUrl}` });
+        }
+        
         await interaction.editReply({
-            content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${tracks.length} kawałków z playlisty ${playlistUrl}`
+            content: `Now attempting to find and queue ${tracks.length} tracks from Spotify on channel <#${voiceChannel.id}>.`
         });
         
         console.log(`Pobrano ${tracks.length} utworów z playlisty Spotify.`);
 
-
-        for (let track of tracks) {
+        for (const track of tracks) {
             try {
-                let url = await findYoutubeUrl(`${track.name} ${track.artist}`);
-                let stream = await getStream(url);
+                const video = await findYoutubeUrl(`${track.name} ${track.artist}`);
+                if (!video) {
+                    console.warn(`Could not find a YouTube video for: ${track.name} - ${track.artist}`);
+                    continue; // Skip to the next track
+                }
 
-                player.addToPlaylist(interaction.guild.id, stream);
+                const streamData = await getStream(video);
+                if (!streamData) {
+                    console.warn(`Could not get a stream for: ${video.url}`);
+                    continue; // Skip to the next track
+                }
+
+                player.addToPlaylist(interaction.guild.id, streamData);
                 
             } catch (err) {
-                console.warn("ERROR SPOTTETD! \n\n\n\n\n ERROR SPOSTETS \n\n", err.message )
+                console.error(`An unexpected error occurred while processing track "${track.name}":`, err.message);
             }
         }
-        await interaction.followUp("Nie ręczę za efekty, ale coś się udało znaleźć...")
+
+        await interaction.followUp("Finished adding tracks to the queue!");
     },
 };

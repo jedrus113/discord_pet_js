@@ -16,5 +16,7 @@ module.exports = {
 
         player.skip(interaction.guild.id);
 
+        await interaction.reply('')
+
     },
 }; 

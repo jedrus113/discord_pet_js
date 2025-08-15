@@ -18,11 +18,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-  "@discordjs/voice": "^0.18.0",
-  "discord.js": "^14.21.0",
-  "dotenv": "^16.5.0",
-  "play-dl": "^1.9.7",
-  "spotify-web-api-node": "^5.0.2"
-}
-
+    "@discordjs/voice": "^0.18.0",
+    "@distube/ytdl-core": "^4.16.12",
+    "discord.js": "^14.21.0",
+    "dotenv": "^16.5.0",
+    "play-dl": "^1.9.7",
+    "spotify-web-api-node": "^5.0.2",
+    "yt-search": "^2.13.1"
+  }
 }

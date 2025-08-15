@@ -1,30 +1,42 @@
-const play = require('play-dl');
-
+const ytdl = require('@distube/ytdl-core');
+const ytSearch = require('yt-search');
 
 async function findYoutubeUrl(query) {
     console.log(`Wyszukiwanie: ${query}`);
     
-    const searchResults = await play.search(query, { limit: 1 });
-    if (searchResults.length === 0) {
-        console.error("Nie znaleziono utworu na YouTube.");
-        return;
+    const searchResults = await ytSearch(query);
+    if (!searchResults?.videos?.length) {
+        return null;
     }
 
-    console.log(`Znaleziono: ${searchResults[0].url}`);
-    return searchResults[0].url;
+    const video = searchResults.videos[0];
+    console.log(`Znaleziono: ${video.url}`);
+    return video;
 }
 
-async function getStream(query) {
-    if (await play.yt_validate(query) === 'video') {
-        const stream = await play.stream(query);
-        
-        console.log(stream);
-        return stream;
-    } else {
-        console.log('Invalid YouTube video link.');
+async function getStream(video) {
+    if (!video?.url) {
+        return null;
+    }
+
+    try {
+        const stream = ytdl(video.url, {
+            filter: 'audioonly',
+            highWaterMark: 1 << 25,
+            quality: 'highestaudio'
+        });
+
+        return {
+            title: video.title || 'Unknown',
+            url: video.url,
+            stream: stream,
+            type: 'stream'
+        };
+    } catch (err) {
+        console.error(`Failed to get stream for ${video.url}:`, err.message);
+        return null;
     }
 }
-
 
 module.exports = {
     findYoutubeUrl,
