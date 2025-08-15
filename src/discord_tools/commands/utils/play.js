@@ -8,8 +8,8 @@ module.exports = {
 		.setName('play')
 		.setDescription('Odtwórz playlistę ze Spotify lub muzyke z YT')
         .addStringOption(option => 
-            option.setName('playlist_url')
-                .setDescription('URL playlisty Spotify')
+            option.setName('url')
+                .setDescription('URL playlisty Spotify lub Url Filmiku Youtube')
                 .setRequired(true)),
 
 	async execute(interaction) {
