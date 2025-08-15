@@ -13,7 +13,7 @@ module.exports = {
                 .setRequired(true)),
 
 	async execute(interaction) {
-        const playlistUrl = interaction.options.getString('playlist_url');
+        const playlistUrl = interaction.options.getString('url');
         const voiceChannel = interaction.member.voice.channel;
 
         if (!voiceChannel) {
