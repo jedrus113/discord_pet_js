@@ -31,9 +31,9 @@ class GuildPlayer {
                 this.playNext();
             } else {
                 this.disconnectTimeout = setTimeout(() => {
-                    if (this.connection && !this.isPlaying) {
-                        this.connection.destroy();
-                    }
+                if (this.connection && this.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+                    this.connection.destroy();
+                }
                 }, 5000); // 5 seconds
             }
         });
@@ -124,6 +124,9 @@ class PlayerManager {
         });
         
         connection.on(VoiceConnectionStatus.Destroyed, () => {
+            if (node.disconnectTimeout) {
+                clearTimeout(node.disconnectTimeout);
+            }
             this.guilds.delete(guildId);
         });
 
@@ -174,13 +177,21 @@ class PlayerManager {
         const node = this.getNode(guildId);
         if (!node) return;
 
+        if (node.disconnectTimeout) {
+            clearTimeout(node.disconnectTimeout);
+            node.disconnectTimeout = null;
+        }
+
         node.playlist = [];
+        node.requestQueue = [];
         node.player.stop(true);
+
         if (node.connection && node.connection.state.status !== VoiceConnectionStatus.Destroyed) {
             node.connection.destroy();
+        } else {
+            this.guilds.delete(guildId);
         }
     }
-    
     /**
      * Skips the currently playing song for a guild.
      * @param {string} guildId The ID of the guild.
