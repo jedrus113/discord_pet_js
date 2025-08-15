@@ -1,30 +1,42 @@
-const { SlashCommandBuilder } = require('discord.js');
-const player = require('../../../music_tools/player.js')
-const path = require('path');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, VoiceChannel } = require('discord.js');
+const { getSpotifyPlaylistTracks } = require('../../../music_tools/spotify');
+const { getStream, findYoutubeUrl } = require('../../../music_tools/youtube')
+const player = require('../../../music_tools/player')
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('play')
-        .setDescription('Ucisz szczerbatka'),
+	data: new SlashCommandBuilder()
+		.setName('play')
+		.setDescription('Odtwórz playlistę ze Spotify lub muzyke z YT')
+        .addStringOption(option => 
+            option.setName('playlist_url')
+                .setDescription('URL playlisty Spotify')
+                .setRequired(true)),
 
-    async execute(interaction) {   
+	async execute(interaction) {
+        const playlistUrl = interaction.options.getString('playlist_url');
         const voiceChannel = interaction.member.voice.channel;
-        if (!voiceChannel) {
-            return await interaction.reply('Musisz być w kanałe głosowym1');
-        }
+        await player.joinChannel(VoiceChannel, interaction.guild.id, interaction.guild.voiceAdapterCreator);
+
+        const reply_message = await interaction.reply("Starging spotify");
+        const tracks = await getSpotifyPlaylistTracks(playlistUrl);
+        await interaction.editReply({
+            content: `Spróbuję to odtworzyć na kanale <#${voiceChannel.id}>, muszę znaleźć ${tracks.length} kawałków z playlisty ${playlistUrl}`
+        });
         
-        await player.joinChannel(voiceChannel.id, interaction.guild.id, interaction.guild.voiceAdapterCreator);
+        console.log(`Pobrano ${tracks.length} utworów z playlisty Spotify.`);
 
-        const filePath = path.join(__dirname, 'fire.mp3'); 
-        const track = {
-            type: 'file',
-            path: filePath
-        };
 
-        try {
-            const added = player.addToPlaylist(interaction.guild.id, track);
-        } catch (error) {
-            await interaction.reply('Error: ' + error);
+        for (let track of tracks) {
+            try {
+                let url = await findYoutubeUrl(`${track.name} ${track.artist}`);
+                let stream = await getStream(url);
+
+                player.addToPlaylist(interaction.guild.id, stream);
+                
+            } catch (err) {
+                console.warn("ERROR SPOTTETD! \n\n\n\n\n ERROR SPOSTETS \n\n", err.message )
+            }
         }
+        await interaction.followUp("Nie ręczę za efekty, ale coś się udało znaleźć...")
     },
-}; 
+};

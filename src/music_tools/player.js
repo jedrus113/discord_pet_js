@@ -168,6 +168,22 @@ class PlayerManager {
         }
         this.guilds.delete(guildId);
     }
+    /**
+     * Skips the current playing song for a guild.
+     * @param {string} guildId 
+     * @returns 
+     */
+    skip(guildId) {
+        const node = this.getNode(guildId)
+
+        if (!node.isPlaying) {
+            console.log(`No track is playing in guild ${guildId}`)
+            return false;
+        }
+
+        node.player.stop(true);
+        return true;
+    }
 }
 
 module.exports = new PlayerManager();
