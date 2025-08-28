@@ -38,12 +38,12 @@ module.exports = {
 		.setName('play')
 		.setDescription('Odtwórz playlistę ze Spotify lub muzyke z YT')
         .addStringOption(option => 
-            option.setName('playlist_url')
+            option.setName('url')
                 .setDescription('URL playlisty Spotify / yt / single yt video')
                 .setRequired(true)),
 
 	async execute(interaction) {
-        const playlistUrl = interaction.options.getString('playlist_url');
+        const playlistUrl = interaction.options.getString('url');
         const voiceChannel = interaction.member.voice.channel;
         const queue = await makeQueThenJoin(interaction.guild, voiceChannel)
 
