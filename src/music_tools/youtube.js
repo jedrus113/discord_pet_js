@@ -1,8 +1,24 @@
 const ytdl = require('@distube/ytdl-core');
+const ytpl = require('@distube/ytpl');
 const ytSearch = require('yt-search');
 
-function isYoutubeUrl(url) {
-    return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url);
+function youtubeUrlType(url) {
+  if (!/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) return null;
+  return /[?&]list=/.test(url) ? 'playlist' : 'video';
+}
+
+
+
+
+async function extractYoutubePlaylistUrls(playlistUrl) {
+    const playlistId = await ytpl.getPlaylistID(playlistUrl);
+
+    if (playlistId.startsWith("RD")) {
+        throw new Error("Mix playlists are not supported.");
+    }
+
+    const playlist = await ytpl(playlistUrl, { pages: Infinity });
+    return playlist.items.map(item => `https://www.youtube.com/watch?v=${item.id}`);
 }
 
 async function findYoutubeUrl(query) {
@@ -21,10 +37,9 @@ async function findYoutubeUrl(query) {
 async function getStream(input) {
     let video;
 
-    if (typeof input === 'string' && isYoutubeUrl(input)) {
+    if (typeof input === 'string' && youtubeUrlType(input) === "video") {
         video = { url: input, title: 'Unknown' }; 
-    } 
-    else if (input?.url && isYoutubeUrl(input.url)) {
+    } else if (input?.url && youtubeUrlType(input) === "video") {
         video = input;
     } else {
         console.error('Invalid video input. Must be a YouTube URL or a video object.');
@@ -38,20 +53,40 @@ async function getStream(input) {
             quality: 'highestaudio'
         });
 
+        stream.on('error', err => {
+            if (err.message.includes("Sign in to confirm your age") || err.message.includes("This video is age-restricted")) {
+                console.warn(`Skipping age-restricted video: ${video.url}`);
+            } else {
+                // FUCKASS LMAO
+                return {
+                    title: video.title || 'Unknown',
+                    url: video.url,
+                    stream,
+                    type: 'stream'
+                };
+            }
+        });
+
         return {
             title: video.title || 'Unknown',
             url: video.url,
-            stream: stream,
+            stream,
             type: 'stream'
         };
     } catch (err) {
-        console.error(`Failed to get stream for ${video.url}:`, err.message);
+        if (err.message.includes("Sign in to confirm your age") || err.message.includes("This video is age-restricted")) {
+            console.warn(`Skipping age-restricted video: ${video.url}`);
+        } else {
+            console.error(`Failed to get stream for ${video.url}:`, err.message);
+        }
         return null;
     }
 }
 
+
 module.exports = {
     findYoutubeUrl,
     getStream,
-    isYoutubeUrl
+    youtubeUrlType,
+    extractYoutubePlaylistUrls
 };

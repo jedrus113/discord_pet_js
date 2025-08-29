@@ -1,7 +1,8 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getSpotifyPlaylistTracks } = require('../../../music_tools/spotify');
-const { getStream, findYoutubeUrl, isYoutubeUrl } = require('../../../music_tools/youtube');
+const { getStream, findYoutubeUrl, youtubeUrlType, extractYoutubePlaylistUrls } = require('../../../music_tools/youtube');
 const player = require('../../../music_tools/player');
+const { stream } = require('play-dl');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -30,7 +31,9 @@ module.exports = {
             return interaction.reply({ content: 'Could not join the voice channel.', ephemeral: true });
         }
         
-        if (isYoutubeUrl(playlistUrl)) {
+        const isYoutube = youtubeUrlType(playlistUrl);
+
+        if (isYoutube == "video") {
             await interaction.reply(`Playing YouTube link in <#${voiceChannel.id}>...`);
             try {
                 const streamData = await getStream(playlistUrl);
@@ -43,7 +46,31 @@ module.exports = {
                 console.error(err);
                 return interaction.editReply("An error occurred while trying to play the YouTube link.");
             }
-        }
+        } else if (isYoutube == "playlist") {
+            await interaction.reply(`Adding YouTube playlist in <#${voiceChannel.id}>...`);
+            try {
+                const urls = await extractYoutubePlaylistUrls(playlistUrl);
+                if (!urls.length) {
+                    return interaction.editReply("Could not fetch any videos from the playlist.");
+                }
+
+                for (const url of urls) {
+                    const streamData = await getStream(url);
+                    if (streamData == null) {
+                        continue;
+                    }
+                    if (streamData) {
+                        player.addToPlaylist(interaction.guild.id, streamData);
+                    }
+                }
+
+                return interaction.followUp(`Added **${urls.length}** tracks from the playlist to the queue!`);
+            } catch (err) {
+                console.error(err);
+                return interaction.editReply("An error occurred while trying to play the YouTube playlist.");
+            }
+        } else {
+
         
         await interaction.reply("Reading playlist...");
         const tracks = await getSpotifyPlaylistTracks(playlistUrl);
@@ -80,5 +107,6 @@ module.exports = {
         }
 
         await interaction.followUp("Finished adding tracks to the queue!");
-    },
+    }
+    }
 };
