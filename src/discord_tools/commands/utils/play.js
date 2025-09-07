@@ -30,7 +30,7 @@ module.exports = {
             return interaction.reply({ content: 'Could not join the voice channel.', ephemeral: true });
         }
 
-        const isSpotify = url.includes('spotify.com');
+        const isSpotify = playlistUrl.includes('spotify.com');
         const isYoutubePlaylist = youtubeIsPlaylist(playlistUrl);
 
         if (!isSpotify && !isYoutube) {
