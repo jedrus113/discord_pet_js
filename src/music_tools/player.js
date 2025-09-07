@@ -156,7 +156,7 @@ class PlayerManager {
      */
     addToPlaylist(guildId, track) {
         if (!track || (track.type === 'stream' && !track.stream)) {
-            console.error("Invalid track object provided.");
+            console.error("Invalid track object provided.", track);
             return false;
         }
 
