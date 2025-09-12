@@ -21,6 +21,7 @@ Thumbs.db
 
 # VSCode settings (optional)
 .vscode/
+.idea/
 
 # Conf directory
 conf/
