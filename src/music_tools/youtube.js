@@ -36,7 +36,7 @@ async function findYoutubeUrl(query) {
 async function getStream(input) {
     let video;
 
-    if (youtubeIsPlaylist(input)) {
+    if (youtubeIsPlaylist(input?.url)) {
         video = input;
     } else {
         video = { url: input, title: 'Unknown' };
