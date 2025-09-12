@@ -19,8 +19,9 @@ logs/
 .DS_Store
 Thumbs.db
 
-# VSCode settings (optional)
+# editors settings (optional)
 .vscode/
+.idea/
 
 # Conf directory
 conf/
