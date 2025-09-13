@@ -1,4 +1,5 @@
 const SpotifyWebApi = require('spotify-web-api-node');
+const { handleYTSearchRequest } = require('./youtube');
 
 
 // load required extractor
@@ -16,6 +17,28 @@ async function authorizeSpotify() {
     } catch (err) {
         console.error('Nie udało się zautoryzować w Spotify:', err);
     }
+}
+
+
+async function handleSpotifyPlaylist(playlistUrl, interaction) {
+    await interaction.editReply("Reading playlist...");
+    const tracks = await getSpotifyPlaylistTracks(playlistUrl);
+
+    await interaction.editReply({
+        content: `Now attempting to find and queue ${tracks.length} tracks from Spotify to play.`
+    });
+
+    console.log(`Pobrano ${tracks.length} utworów z playlisty Spotify.`);
+
+    for (const track of tracks) {
+        try {
+            await handleYTSearchRequest(`${track.name} ${track.artist}`, interaction);
+        } catch (err) {
+            console.error(`An unexpected error occurred while processing track "${track.name}":`, err.message);
+        }
+    }
+
+    await interaction.followUp("Finished adding tracks to the queue!");
 }
 
 
@@ -59,4 +82,5 @@ async function getSpotifyPlaylistTracks(playlist_spotify_url) {
 
 module.exports = {
     getSpotifyPlaylistTracks,
+    handleSpotifyPlaylist,
 };

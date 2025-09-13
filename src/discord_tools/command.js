@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
 const client = require('./client');
+const { log } = require("../utils/logger");
 
 dotenv.config();
 
@@ -10,24 +11,19 @@ dotenv.config();
 client.commands = new Collection();
 
 const commands = [];
-const commandsFolder = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(commandsFolder);
+const folderPath = path.join(__dirname, 'commands/utils');
+const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
 
-for (const folder of commandFolders) {
-    const folderPath = path.join(commandsFolder, folder);
-    const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+    const filePath = path.join(folderPath, file);
+    const command = require(filePath);
 
-    for (const file of commandFiles) {
-        const filePath = path.join(folderPath, file);
-        const command = require(filePath);
-
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-            commands.push(command.data.toJSON());
-            console.log(`Loaded command "${command.data.name}"`);
-        } else {
-            console.log(`[WARNING] Command at ${filePath} is missing "data" or "execute".`);
-        }
+    if ('data' in command && 'execute' in command) {
+        client.commands.set(command.data.name, command);
+        commands.push(command.data.toJSON());
+        console.log(`Loaded command "${command.data.name}"`);
+    } else {
+        console.log(`[WARNING] Command at ${filePath} is missing "data" or "execute".`);
     }
 }
 
@@ -46,9 +42,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } catch (error) {
         console.error(error);
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'Wystąpił błąd przy wykonywaniu komendy!', ephemeral: true });
+            await interaction.followUp({ content: 'Wystąpił błąd przy wykonywaniu komendy!' });
         } else {
-            await interaction.reply({ content: 'Wystąpił błąd przy wykonywaniu komendy!', ephemeral: true });
+            await interaction.reply({ content: 'Wystąpił błąd przy wykonywaniu komendy!' });
         }
     }
 });
@@ -56,7 +52,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 // ----------------- Deploy Commands -----------------
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     try {
         const serverIds = client.guilds.cache.map(guild => guild.id);
         console.log(`Deploying ${commands.length} commands to ${serverIds.length} servers...`);
@@ -68,7 +64,6 @@ client.once('ready', async () => {
                     Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, serverId),
                     { body: commands }
                 );
-                console.log(`Successfully deployed ${data.length} commands to server ${serverId}`);
             } catch (error) {
                 console.error(`Failed to deploy commands to server ${serverId}:`, error);
             }
@@ -80,4 +75,3 @@ client.once('ready', async () => {
     }
 });
 
-client.login(process.env.DISCORD_TOKEN);

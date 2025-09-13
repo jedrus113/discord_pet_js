@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, VoiceChannel } = require('discord.js');
 const player = require('../../../music_tools/player')
+const MyDiscordServersManager = require("../../server_class");
 
 
 module.exports = {
@@ -14,7 +15,8 @@ module.exports = {
             return await interaction.reply('Nie jestem na kanale głosowym');
         }
 
-        player.skip(interaction.guild.id);
+        const guildManager = MyDiscordServersManager.get(interaction.guild.id);
+        await guildManager.skipPlaylistSong();
 
         await interaction.reply('Skipped')
 

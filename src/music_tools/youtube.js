@@ -1,88 +1,76 @@
 const ytdl = require('@distube/ytdl-core');
 const ytpl = require('@distube/ytpl');
 const ytSearch = require('yt-search');
+const player = require("./player");
+const MyDiscordServersManager = require('../discord_tools/server_class');
+
 
 function youtubeIsPlaylist(url) {
-  return url.includes('list=') ? 'playlist' : 'video';
+  return url.includes('list=');
 }
 
 
+async function handleYTRequest(url, interaction) {
+    if (youtubeIsPlaylist(url)) return await handleYTPlaylistRequest(url, interaction);
+    return await handleYTVideoRequest(url, interaction);
+}
 
 
-async function extractYoutubePlaylistUrls(playlistUrl) {
+async function handleYTPlaylistRequest(playlistUrl, interaction) {
     const playlistId = await ytpl.getPlaylistID(playlistUrl);
-
-    if (playlistId.startsWith("RD")) {
-        throw new Error("Mix playlists are not supported.");
-    }
-
     const playlist = await ytpl(playlistUrl, { pages: Infinity });
-    return playlist.items.map(item => `https://www.youtube.com/watch?v=${item.id}`);
+
+    for (const url of playlist.items) {
+        await addStreamToPlaylist(url, interaction);
+    }
 }
 
-async function findYoutubeUrl(query) {
-    console.log(`Wyszukiwanie: ${query}`);
-    
-    const searchResults = await ytSearch(query);
+
+async function handleYTVideoRequest(videoUrl, interaction) {
+    const videoId = new URLSearchParams(new URL(videoUrl).search).get('v');
+    const video = await ytSearch({ videoId: videoId } );
+    await addStreamToPlaylist(video, interaction);
+}
+
+
+// serach
+async function handleYTSearchRequest(searchQueryStr, interaction) {
+    console.log(`Wyszukiwanie: ${searchQueryStr}`);
+
+    const searchResults = await ytSearch(searchQueryStr);
     if (!searchResults?.videos?.length) {
         return null;
     }
 
     const video = searchResults.videos[0];
     console.log(`Znaleziono: ${video.url}`);
-    return video;
+
+    await addStreamToPlaylist(video, interaction);
 }
 
-async function getStream(input) {
-    let video;
 
-    if (youtubeIsPlaylist(input?.url)) {
-        video = input;
-    } else {
-        video = { url: input, title: 'Unknown' };
-    }
+async function addStreamToPlaylist(videoStream, interaction) {
 
-    try {
-        const stream = ytdl(video.url, {
-            filter: 'audioonly',
-            highWaterMark: 1 << 25,
-            quality: 'highestaudio'
-        });
+    const stream = ytdl(videoStream.url, {
+        filter: 'audioonly',
+        highWaterMark: 1 << 25,
+        quality: 'highestaudio'
+    });
 
-        stream.on('error', err => {
-            if (err.message.includes("Sign in to confirm your age") || err.message.includes("This video is age-restricted")) {
-                console.warn(`Skipping age-restricted video: ${video.url}`);
-            } else {
-                // FUCKASS LMAO
-                return {
-                    title: video.title || 'Unknown',
-                    url: video.url,
-                    stream,
-                    type: 'stream'
-                };
-            }
-        });
-
-        return {
-            title: video.title || 'Unknown',
-            url: video.url,
-            stream,
-            type: 'stream'
-        };
-    } catch (err) {
-        if (err.message.includes("Sign in to confirm your age") || err.message.includes("This video is age-restricted")) {
-            console.warn(`Skipping age-restricted video: ${video.url}`);
-        } else {
-            console.error(`Failed to get stream for ${video.url}:`, err.message);
-        }
-        return null;
-    }
+    const streamData = {
+        title: videoStream.title || 'Unknown',
+        url: videoStream.url,
+        stream,
+        type: 'stream',
+        interaction: interaction,
+        ytData: videoStream,
+    };
+    const guildManager = MyDiscordServersManager.get(interaction.guild.id);
+    await guildManager.addToPlaylist(streamData);
 }
 
 
 module.exports = {
-    findYoutubeUrl,
-    getStream,
-    youtubeIsPlaylist,
-    extractYoutubePlaylistUrls
+    handleYTRequest,
+    handleYTSearchRequest,
 };
