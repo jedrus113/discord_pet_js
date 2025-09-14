@@ -19,7 +19,7 @@ class GuildPlayer {
             },
         });
         this.playlist = [];
-        this.disconnectTimeout = null;
+        this.isRandomPlaylistEnabled = false;
 
         this.player.on(AudioPlayerStatus.Idle, async () => {
             await this.playNext();
@@ -52,7 +52,13 @@ class GuildPlayer {
     }
 
     async playNext() {
-        const track = this.playlist.shift();
+        let track;
+        if (this.isRandomPlaylistEnabled) {
+            const index = Math.floor(Math.random() * this.playlist.length);
+            track = this.playlist.splice(index, 1)[0];
+        } else {
+            track = this.playlist.shift();
+        }
         if (!track) {
             await this.stop();
             return;
@@ -68,8 +74,11 @@ class GuildPlayer {
         } else if (track.type === 'stream') {
             resource = createAudioResource(track.stream);
         }
+        resource.metadata = track;
 
         this.player.play(resource);
+
+        await this.guildManager.sendOrUpdateNowPlaingMessage();
     }
 
     async stop() {

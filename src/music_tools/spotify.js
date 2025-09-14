@@ -35,6 +35,7 @@ async function handleSpotifyPlaylist(playlistUrl, interaction) {
             await handleYTSearchRequest(`${track.name} ${track.artist}`, interaction);
         } catch (err) {
             console.error(`An unexpected error occurred while processing track "${track.name}":`, err.message);
+            console.error(err);
         }
     }
 
