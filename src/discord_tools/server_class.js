@@ -22,7 +22,6 @@ class MyDiscordServersManager {
 
         this.designatedMusicTextChannel = null;
 
-        this.connection = null;
         this.nowPlaingMessage = null;
     }
 
@@ -167,19 +166,19 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         if (interaction.customId === "stopAndRemoveList") {
             await MyDiscordServersManager.get(interaction.guildId).stopPlaylist()
-            interaction.deferUpdate()
+            await interaction.deferUpdate()
         }
         else if (interaction.customId === "skipSongPlaylist") {
             await MyDiscordServersManager.get(interaction.guildId).skipPlaylistSong()
-            interaction.deferUpdate()
+            await interaction.deferUpdate()
         }
         else if (interaction.customId === "enableRandomPlaylist") {
             await MyDiscordServersManager.get(interaction.guildId).toggleRandomPlaylFromPlaylist(true);
-            interaction.deferUpdate()
+            await interaction.deferUpdate()
         }
         else if (interaction.customId === "disableRandomPlaylist") {
             await MyDiscordServersManager.get(interaction.guildId).toggleRandomPlaylFromPlaylist(false);
-            interaction.deferUpdate()
+            await interaction.deferUpdate()
         }
 
 
