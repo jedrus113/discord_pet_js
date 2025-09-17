@@ -6,7 +6,7 @@ const {
     AudioPlayerStatus,
     AudioPlayerIdleState,
     NoSubscriberBehavior,
-    VoiceConnectionDestroyedState,
+    VoiceConnectionStatus,
 } = require('@discordjs/voice');
 const fs = require('fs');
 
@@ -43,12 +43,17 @@ class GuildPlayer {
 
     async addToPlaylist(stream) {
         this.playlist.push(stream);
-        if (getVoiceConnection(this.guildManager.server.id) && getVoiceConnection(this.guildManager.server.id)?.state !== VoiceConnectionDestroyedState) {
-            if (this.player.state === AudioPlayerIdleState) await this.playNext();
+        if (
+            !getVoiceConnection(this.guildManager.server.id)
+            || !getVoiceConnection(this.guildManager.server.id)?.state?.status
+            || getVoiceConnection(this.guildManager.server.id)?.state?.status == VoiceConnectionStatus.Destroyed
+            || getVoiceConnection(this.guildManager.server.id)?.state?.status == VoiceConnectionStatus.Disconnected
+        ) {
+            await this.joinChannel(stream.interaction.member.voice.channel.id);
+            await this.playNext();
             return;  // so it is playing currenly
         }
-        await this.joinChannel(stream.interaction.member.voice.channel.id);
-        await this.playNext();
+        if (this.player.state === AudioPlayerIdleState) await this.playNext();
     }
 
     async playNext() {

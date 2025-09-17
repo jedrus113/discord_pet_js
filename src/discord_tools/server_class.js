@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { EmbedBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ContainerBuilder,
-    MessageFlags, StringSelectMenuBuilder, ModalBuilder, TextInputStyle, TextInputBuilder } = require('discord.js');
+const { ButtonBuilder, ButtonStyle, ActionRowBuilder, ContainerBuilder,
+    MessageFlags, ModalBuilder, TextInputStyle, TextInputBuilder } = require('discord.js');
 const client = require('./client');
 const GuildPlayer = require('../music_tools/player');
 
@@ -77,7 +77,10 @@ class MyDiscordServersManager {
 
 
     async sendOrUpdateNowPlaingMessage() {
-        const songData = this.player.player.state.resource.metadata;
+        const songData = this.player.player.state.resource?.metadata;
+        if (!songData?.ytData) {
+            return;
+        }
 
         const title = songData.title;
         const description = songData.ytData.description
