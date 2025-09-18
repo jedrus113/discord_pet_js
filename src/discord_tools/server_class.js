@@ -81,11 +81,12 @@ class MyDiscordServersManager {
         if (!songData?.ytData) {
             return;
         }
+        const musicTextChannelToUse = this.designatedMusicTextChannel || songData.interaction.channel;
 
         const title = songData.title;
         const description = songData.ytData.description
         const thumbUrl = songData.ytData.thumbnail;
-        const length = songData.ytData.timestamp;
+        const length = songData.ytData?.timestamp || songData.ytData?.duration;
         const videoUrl = songData.url;
         let rangomOptionBttn;
 
@@ -154,7 +155,10 @@ class MyDiscordServersManager {
                 flags: MessageFlags.IsComponentsV2,
             })
         } catch (error) {
-            this.nowPlaingMessage = await this.designatedMusicTextChannel.send(
+            if (this.nowPlaingMessage) {
+                console.error(error);
+            }
+            this.nowPlaingMessage = await musicTextChannelToUse.send(
                 { embeds: [], components: [exampleContainer], flags: MessageFlags.IsComponentsV2, }
             );
         }

@@ -1,7 +1,6 @@
 const ytdl = require('@distube/ytdl-core');
 const ytpl = require('@distube/ytpl');
 const ytSearch = require('yt-search');
-const player = require("./player");
 const MyDiscordServersManager = require('../discord_tools/server_class');
 
 
@@ -17,17 +16,25 @@ async function handleYTRequest(url, interaction) {
 
 
 async function handleYTPlaylistRequest(playlistUrl, interaction) {
-    const playlistId = await ytpl.getPlaylistID(playlistUrl);
     const playlist = await ytpl(playlistUrl, { pages: Infinity });
 
-    for (const url of playlist.items) {
-        await addStreamToPlaylist(url, interaction);
+    for (const video of playlist.items) {
+        video.description = playlist.title || "No description";
+        await addStreamToPlaylist(video, interaction);
     }
 }
 
 
 async function handleYTVideoRequest(videoUrl, interaction) {
-    const videoId = new URLSearchParams(new URL(videoUrl).search).get('v');
+    let videoId;
+    if (videoUrl.startsWith("https://youtu.be/")) {
+        // short youtube url youtu.be/videoId?blabla
+        videoId =  videoUrl.split('/').pop().split('?')[0];
+    } else {
+        // full youtube url youtube.com/blablabla?v=videoId&blabla
+        videoId = new URLSearchParams(new URL(videoUrl).search).get('v');
+    }
+
     const video = await ytSearch({ videoId: videoId } );
     await addStreamToPlaylist(video, interaction);
 }

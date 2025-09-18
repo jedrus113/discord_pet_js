@@ -32,7 +32,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
-    log(command);
+    log(`Execute command: ${command?.data?.name}`);
 
     if (!command) {
         log(`No command matching ${interaction.commandName} found.`);
@@ -42,7 +42,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
         await command.execute(interaction);
     } catch (error) {
-        log(error);
+        log(`Command Error: ${error.message}\n${error.stack}`);
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: 'Wystąpił błąd przy wykonywaniu komendy!' });
         } else {
@@ -78,4 +78,3 @@ client.once('clientReady', async () => {
         log(`Failed to deploy commands to server ${serverId}: ${error}`);
     }
 });
-
