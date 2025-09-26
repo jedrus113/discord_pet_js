@@ -45,7 +45,7 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
     let limit = 4000;
     messages.forEach(oldMessage => {
         if (limit <= 0) return;
-        if (oldMessage.id == message.id) return;
+        if (oldMessage.id === message.id) return;
         let content = oldMessage.cleanContent.trim();
         let embedsStr = "";
         
@@ -59,7 +59,9 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
         limit -= content.length;
         let role = "user";
         const timestamp = new Date(oldMessage.createdTimestamp).toLocaleString();
-        let premessage = `Date: ${timestamp}\nUser ID: ${oldMessage.author.id}\nNickname: ${oldMessage.author.username}\nDisplay name: ${oldMessage.author.displayName}\nMessage:\n`;
+        const guildMember = oldMessage.guild.members.cache.get(oldMessage.author.id);
+        const displayName = guildMember ? guildMember.displayName : oldMessage.author.displayName;
+        let premessage = `Date: ${timestamp}\nUser ID: ${oldMessage.author.id}\nNickname: ${oldMessage.author.username}\nDisplay name: ${displayName}\nMessage:\n`;
 
         openaiHistoryMessages.push({
             role: role,
@@ -70,7 +72,9 @@ async function openAiChat(message, messages, channelDataPrompt, knowlageBase) {
     });
 
     const timestamp = new Date(message.createdTimestamp).toLocaleString();
-    const prompt = `Otrzymałeś nową wiadomość.\nData: ${timestamp}\nNa kanale\n${channelDataPrompt}\nOd\nUser ID: ${message.author.id}\nNickname: ${message.author.username}\nDisplay name: ${message.author.displayName}\nMessage:\n${message.content}`;
+    const guildMember = message.guild.members.cache.get(message.author.id);
+    const displayName = guildMember ? guildMember.displayName : message.author.displayName;
+    const prompt = `Otrzymałeś nową wiadomość.\nData: ${timestamp}\nNa kanale\n${channelDataPrompt}\nOd\nUser ID: ${message.author.id}\nNickname: ${message.author.username}\nDisplay name: ${displayName}\nMessage:\n${message.content}`;
 
     try {
         return await getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowlageBase) || "Nie udało się uzyskac odpowiedzi. Szczerbatek śpi??? czy coś :/ Wołać andrew!";
