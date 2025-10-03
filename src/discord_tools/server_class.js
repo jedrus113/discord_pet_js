@@ -84,7 +84,7 @@ class MyDiscordServersManager {
         const musicTextChannelToUse = this.designatedMusicTextChannel || songData.interaction.channel;
 
         const title = songData.title;
-        const description = songData.ytData.description
+        const description = songData.ytData.description.substring(0, 250);
         const thumbUrl = songData.ytData.thumbnail;
         const length = songData.ytData?.timestamp || songData.ytData?.duration;
         const videoUrl = songData.url;
