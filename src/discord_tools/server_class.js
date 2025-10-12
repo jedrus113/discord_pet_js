@@ -20,6 +20,7 @@ class MyDiscordHelperPerServer {
         
         this.channelWelcome = null;
         this.channelFarewell = null;
+        this.channelBanned = null;
     }
 
     async setupData() {
@@ -45,6 +46,15 @@ class MyDiscordHelperPerServer {
                 }
             } catch (error) {
                 console.error("channelFarewellId ERROR!");
+                console.error(error);
+            }
+
+            try {
+                if (this.saveableConfig.channelBannedId) {
+                    this.channelBanned = await this.server.channels.fetch(this.saveableConfig.channelBannedId);
+                }
+            } catch (error) {
+                console.error("channelBannedId ERROR!");
                 console.error(error);
             }
         } catch (error) {
@@ -127,6 +137,23 @@ class MyDiscordHelperPerServer {
         const attachment = new AttachmentBuilder('src/statics/imgs/bye.png');
 
         this.channelFarewell.send({ embeds: [embed], files: [attachment] });
+    }
+
+    async sendBannedMessage(user, reason) {
+        if (!this.channelBanned) {
+            console.error(`Missing channelBanned for server (${this.server.id}) ${this.server.name}`);
+            return;
+        }
+
+        const embed = new EmbedBuilder()
+            .setColor('#ff0033')
+            .setTitle(`Rawr użytkownik: ${user.displayName} (${user.username}) został wyrzucony z gniazda przez smoka alfe!`)
+            .setDescription(`User <@${user.id}> nei będzie już nas niepokoił.\n\nPowód: ${reason || 'Brak podanej przyczyny'}`)
+            .setImage('attachment://bye_ban.png');
+
+        const attachment = new AttachmentBuilder('src/statics/imgs/bye_ban.png');
+
+        this.channelBanned.send({ embeds: [embed], files: [attachment] });
     }
 
     async protectChannel(message) {

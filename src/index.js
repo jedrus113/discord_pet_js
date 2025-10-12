@@ -24,7 +24,14 @@ client.on(Events.GuildMemberAdd, async (member) => {
 // user leaves server
 client.on(Events.GuildMemberRemove, async (member) => {
     log(`User ${member.user.username} quit ${member.guild.name}`);
-    MyDiscordHelperPerServer.get(member.guild.id).sendFarewellMessage(member.user);
+    const banEntry = await member.guild.bans.fetch(member.user).catch(() => null);
+    if (banEntry) {
+        log(`Due to ban: ${banEntry.reason}`);
+        MyDiscordHelperPerServer.get(member.guild.id).sendBannedMessage(member.user, banEntry.reason);
+    } else {
+        log(`Left himself `);
+        MyDiscordHelperPerServer.get(member.guild.id).sendFarewellMessage(member.user);
+    }
 });
 
 
