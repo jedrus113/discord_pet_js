@@ -148,7 +148,7 @@ class MyDiscordHelperPerServer {
         const embed = new EmbedBuilder()
             .setColor('#ff0033')
             .setTitle(`Rawr użytkownik: ${user.displayName} (${user.username}) został wyrzucony z gniazda przez smoka alfe!`)
-            .setDescription(`User <@${user.id}> nei będzie już nas niepokoił.\n\nPowód: ${reason || 'Brak podanej przyczyny'}`)
+            .setDescription(`User <@${user.id}> nie będzie już nas niepokoił.\n\nPowód: ${reason || 'Brak podanej przyczyny'}`)
             .setImage('attachment://bye_ban.png');
 
         const attachment = new AttachmentBuilder('src/statics/imgs/bye_ban.png');
