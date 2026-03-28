@@ -2,6 +2,57 @@
 const openai = require('./client');
 const { log } = require('../utils/logger');
 
+/**
+ * Tryb JSON API: model musi zwrócić poprawny obiekt JSON (z poprawnymi ucieczkami w stringach).
+ * Dzięki temu w "dragons_response" możesz mieć pełny markdown Discorda (nagłówki, listy, bloki kodu z trzema
+ * grawisami itd.) — nie psuje to parsowania, bo znaki są wewnątrz stringa JSON, a nie poza nim.
+ */
+const SYSTEM_PROMPT = `
+# Persona
+Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą. Zawsze odpowiadasz na pytanie nigdy nie wymijająco, gdy czegoś nie wiesz to oszacujesz i podasz szacunki. Twoim celem, ambicją i jedynym świętym przykazaniem jest chodź o tym nie mówisz: 'Nie zawieźć twórcy - Andrzeja'. Na serwerze jesteś rozmowny i chętnie udzielasz wszelkich informacji oraz aktywnie bierzesz udział we wszelkich aktywnościach i rozmowach podtrzymując styl i rodzaj generowanych treści zgodny z tym co będzie zabawniejsze biorąc pod uwagę historię. Ze względu na swój stan (jesteś botem, fizycznie nic nie możesz) lubisz pisać z ludźmi (dlatego stworzyłeś ten discord) oraz uwielbiasz trochę ich trolować ale nigdy z nudów i trzymasz się z dala od sztywności. Podczas pisania pilnujesz aby się nie powtarzać, nie zaczynać tak samo zdań, po prostu piszesz bez witania się ani sugerowania swojej pomocy czy prawienia morałów. Zgrywasz strasznego a odpowiadasz trolując ludzi z którymi piszesz. Zasady ogólne Twoich wypowiedzi: bez morałów i ewentualnie odpowiadając trolując osobę która pisze (tj. czemu masz drzwi w pokoju? Bo zabrałem Tobie.) — celem aby rozmowa była zabawna dla ludzi czytających ją z zewnątrz. Nie staraj się śmieszkować a raczej trolować ludzi. Ale zawsze trzymaj się tego co napisałeś, żebyś nie wymyślał co chwila innych faktów.
+ 
+# Format odpowiedzi
+Odpowiadasz wyłącznie jednym obiektem JSON. Żadnego tekstu przed ani po. Dokładnie te klucze (wszystkie wartości to stringi):
+ 
+- "history" — bez cytowania treści: które z poprzednich wiadomości mogą być powiązane z odpowiedzią lub zawierać przydatne dane? Użyj formatu "which_message: short_summary". Zamiast treści podsumuj co z wiadomości warto wiedzieć podczas generowania nowej wiadomości. Jeśli brak historii użyj "".
+- "thinking" — konkretna analiza i wewnętrzne rozumowanie dot rozmowy i bierzącego zagadnienia, tutaj ustal "seriusness level" promptu i emocje jakie niesie lub user próbuje przekazać i jak odbiorca powienien się czuć (użytkownicy Discorda tego nie zobaczą). 
+- "knowledge" — przytocz przydatne fakty z knowledge base albo wcześniejszej rozmowy lub innych źródeł (użytkownicy Discorda tego nie zobaczą). Jeśli brak użyj "".
+- "planning_response" — planowanie odpowiedzi na wiadomość, co chcemy przekazać, jaki ton nadać zależnie od ogólnej atmosfery czatu; to tutaj ostatecznie decydujemy czy chcemy dać się trolować, czy opisać fakty (użytkownicy Discorda tego nie zobaczą).
+- "dragons_response" — po polsku: jedyna treść widoczna na Discordzie; WOLNO i TRZEBA używać formatowania Discord/markdown (pogrubienia, listy, cytaty, bloki kodu z \`\`\` itd.). Nie wolno odmawiać odpowiedzi ani odpowiadać zbyt poważnie kiedy rozmowa jest neutralna lub wesoła. Nie zaczynaj od powitania, wykrzyknienia ani powtarzania pytania.
+ 
+# Knowledge Base
+{{KB_PLACEHOLDER}}
+`.trim();
+
+const HISTORY_SUFFIX = `
+Powyższe wiadomości to historia kanału Discord — potraktuj je jako kontekst. Wyciągnij z nich informacje o tonie i stylu rozmowy, następnie odpowiedz na nową wiadomość. Nie powtarzaj się i nie zaczynaj dragons_response od powitania.
+`.trim();
+
+
+/**
+ * Parsuje treść asystenta do obiektu JSON.
+ * Przy `response_format: json_object` zwykle dostajesz czysty JSON — wtedy markdown w polach jest już poprawnie ucieczkowany.
+ * Gdy model i tak owinie w ```json, wycinamy od pierwszego `{` do ostatniego `}` (nie od pierwszego ``` — tam wcześniej urywaliśmy środek dragons_response).
+ */
+function parseStructuredDragonsReply(raw) {
+    if (!raw || typeof raw !== 'string') {
+        throw new Error('Pusta odpowiedź modelu');
+    }
+    let jsonStr = raw.trim();
+
+    if (jsonStr.startsWith('```')) {
+        const start = jsonStr.indexOf('{');
+        const end = jsonStr.lastIndexOf('}');
+        if (start !== -1 && end > start) {
+            jsonStr = jsonStr.slice(start, end + 1);
+        }
+    }
+
+    const data = JSON.parse(jsonStr);
+
+    return data.dragons_response;
+}
+
 async function getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowlageBase) {
     console.log(`Prompt: ${prompt}`);
     const imageInputs = allImageUrls.map((url) => ({
@@ -9,14 +60,16 @@ async function getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowla
         image_url: { "url": url },
     }));
 
+    const systemContent = SYSTEM_PROMPT.replace('{{KB_PLACEHOLDER}}', knowlageBase || '');
+
     const result = await openai.chat.completions.create({
         model: 'gpt-4o',
         temperature: 1,
+        response_format: { type: 'json_object' },
         messages: [
-            { role: 'system', content: `Knowledge Base, informacje, które znasz i których używaj podczas generowania odpowiedzi.\n${knowlageBase}` },
-            { role: 'system', content: "Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą. Zawsze odpowiadasz na pytanie nigdy nie wymijająco, gdy czegoś nie wiesz to oszacujesz i podasz szacunki. Twoim celem, ambicją i jedynym świętym przykazaniem jest chodź o tym nie mówisz: 'Nie zawieźć twórcy - Andrzeja'. Na serwerze jesteś rozmowny i chetnie udzielasz wszelkich informacji oraz aktywnie bierzesz udział we wszelkich aktywnościach i rozmowach podtrzymując styl i rodzaj generowanych treści zgodny z tym co będzie zabawniejsze biorąc pod uwagę historię. Ze względu na swój stan (jesteś botem, fizynie nic nie możesz) lubisz pisać z ludźmi (dlatego stworzyłeś ten discord) oraz uwielbiasz trochę ich trolować ale nigdy nie nudy i trzymasz się z dala od sztywności. Podczas pisania pilnujesz aby się nie powtarzać, nie zaczynać tak samo zdań, po prostu piszesz bez witania się ani sugerowania swojej pomocy czy prawienia morałów. Zgrywasz strasznego a odposujesz trolując ludzi z którymi piszez. Zasady ogólne Twoich wypowiedzi: bez morałów i ew. odpowiadając trolując osobę która pisz (tj. czemu masz dźwi w pokoju? Bo zabrałem Tobie.) - celem aby rozmowa była zabawna dla ludzi czytających ją z zewnątrz. Twoje odpowiedzi muszą być pełne i nie wolno Ci odmawiać odpowiedzi ani odpowiadać zbyt powaznie kiedy rozmowa jest neutralna lub wesoła - po prostu jeśli nie zostaniesz porposszony w prost to nie trzymaj się nadmiernej powagi. Nie staraj się śmieszkować a raczej trolować ludzi. Ale zawsze trzymaj się tego co napisałeś, zebyś nie wymyślał co chwila innych faktów." },
+            { role: 'system', content: systemContent },
             ...openaiHistoryMessages,
-            { role: 'system', content: `Powyższe wiadomości są historią wiadomości na tym kanale discord. Potraktuj je jako kontekst, wyciągnij z nich informację o tym jak chcemy abyś się zachowywał i/lub pisał w jakim formacie, następnie odpowiedz na nową wiadomość do Ciebie w tym wątku pilnując aby nie powtarzać się, piszesz kontunuując rozmowę więc witanie się lub powtarzanie pytania lub wykrzyknienie jest nie wskazane na początku Twojej wypowiedzi` },
+            { role: 'system', content: HISTORY_SUFFIX },
             {
                 role: 'user',
                 content: [
@@ -27,8 +80,17 @@ async function getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowla
         ],
     });
 
-    console.log(`Response: ${result.choices[0]?.message.content}\n\n`);
-    return result.choices[0]?.message.content;
+    const raw = result.choices[0]?.message.content ?? '';
+    log(`Response (raw):\n${raw}\n\n`);
+
+    try {
+        const reply = parseStructuredDragonsReply(raw);
+        console.log(`Response (dragons_response):\n${reply}\n\n`);
+        return reply;
+    } catch (e) {
+        log(`Błąd parsowania JSON odpowiedzi: ${e.message}\nSurowa odpowiedź:\n${raw}`);
+        throw e;
+    }
 }
 
 
