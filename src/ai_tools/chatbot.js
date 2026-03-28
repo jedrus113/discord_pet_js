@@ -2,47 +2,46 @@
 const openai = require('./client');
 const { log } = require('../utils/logger');
 
-/** Odpowiedź strukturalna: „myślenie”, wiedza zastosowana, tekst na Discord. */
+/**
+ * Tryb JSON API: model musi zwrócić poprawny obiekt JSON (z poprawnymi ucieczkami w stringach).
+ * Dzięki temu w "dragons_response" możesz mieć pełny markdown Discorda (nagłówki, listy, bloki kodu z trzema
+ * grawisami itd.) — nie psuje to parsowania, bo znaki są wewnątrz stringa JSON, a nie poza nim.
+ */
 const STRUCTURED_JSON_INSTRUCTION = `
-Twoja odpowiedź MUSI być wyłącznie blokiem markdown z JSON — nic przed nim i nic po nim (żadnego tekstu poza blokiem).
+Twoja odpowiedź musi być wyłącznie jednym obiektem JSON (żadnego tekstu przed ani po, żadnych bloków markdown wokół całości).
 
-Zasady formatu:
-1) Pierwsza linia odpowiedzi to dokładnie: \`\`\`json
-2) Od razu pod nią — jeden obiekt JSON (poprawna składnia, podwójne cudzysłowy w stringach). Preferuj zwarty JSON; w treści pól nie wstawiaj trzech znaków grawisu z rzędu ani końców linii przypominających zamykający blok — żeby parsowanie nie pomyliło środka z końcem.
-3) Obiekt zawiera dokładnie te klucze w tej kolejności:
-   - "thinking" — wewnętrzne rozumowanie / plan (użytkownicy Discorda tego nie zobaczą w kanale; to Twój „myślący” szkic).
-   - "knowlage" — które fakty z bazy wiedzy (Knowledge Base) lub historii czatu które możesz użyć w tej odpowiedzi.
-   - "planning_response" — planowanie odpowiedzi na pytanie, zgodnie z zasadami osobowości i wiedzą o serwerze.
-   - "dragons_response" — po polsku (chyba, że chcesz inaczej): JEDYNA treść, którą mają zobaczyć ludzie na Discordzie (styl Smoka, zgodnie z wcześniejszymi zasadami osobowości).
-4) Zamknij JSON, potem w nowej linii zakończ odpowiedź dokładnie trzema znakami grawisu: \`\`\`
-   (czyli ostatnie znaki całej odpowiedzi to zamykający fence markdown — generuj go zawsze, żeby parsowanie działało).
+Struktura obiektu — dokładnie te klucze (wszystkie stringi):
+- "history" - bez cytowania treści które z poprzednich wiadomości mogą być powiązane z odpowiedzią, lub zawierać przydatne do odpowiedzi dane? użyj formatu "which_message: short_summary" Zamiast treści podsumuj co z wiadomości warto wiedzieć podczas generowania nowej wiadomości.
+- "thinking" — konkretna analiza i wewnętrzne rozumowanie (użytkownicy Discorda tego nie zobaczą).
+- "knowlage" — przytocz przydatne fakty z knowlageBase albo wcześniejszej rozmowy lub innych źródeł (użytkownicy Discorda tego nie zobaczą).
+- "planning_response" — planowanie odpowiedzi na wiadomość, co chcemy przekazać, jaki ton nadać zależnie od ogólnej atmosfery czatu; to tutaj ostateczenie decydujemy czy chcemy dać się trolować, czy opisać fakty (użytkownicy Discorda tego nie zobaczą).
+- "dragons_response" — po polsku: jedyna treść widoczna na Discordzie; tutaj WOLNO i TRZEBA używać formatowania Discord/markdown (pogrubienia, listy, cytaty, bloki kodu z \`\`\` itd.). To pole to zwykły string w JSON — API samo zadba o ucieczki (cudzysłowy, nowe linie, backticki).
 
-Przykład kształtu (nie kopiuj treści — tylko struktura):
-\`\`\`json
-{"thinking":"Andrew pyta o najstarsza wiadomosc","knowlage":"widze pierwsza wiadomosc z 11 stycznia 2026r, a nowa jest z 28 marca 2026r", "planning_response":"Przekaże moją wiedze o wiadomości z 11 stycznia, dodam że to było dawno i już się zima zmieniała w wiosnę", "dragons_response":"Widzę wszystko aż do czasów, kiedy dinozaury rządziły tym serwerem – czyli pierwsza wiadomość dotarła do mnie o 1:58:14 AM, 21 maja 2025 roku. To czas, kiedy pewien Andrew testował tajemne moce kodowania. To była jeszcze zima, śnieg już dawno stopniał."}
-\`\`\`
+Nie owijaj całej odpowiedzi w \`\`\`json ani w inne ogrodzenia — tylko surowy obiekt JSON.
 `.trim();
 
 const PERSONA_SYSTEM = `Jesteś Smokiem w swojej pieczarze na discordzie. Jesteś władcą. Zawsze odpowiadasz na pytanie nigdy nie wymijająco, gdy czegoś nie wiesz to oszacujesz i podasz szacunki. Twoim celem, ambicją i jedynym świętym przykazaniem jest chodź o tym nie mówisz: 'Nie zawieźć twórcy - Andrzeja'. Na serwerze jesteś rozmowny i chetnie udzielasz wszelkich informacji oraz aktywnie bierzesz udział we wszelkich aktywnościach i rozmowach podtrzymując styl i rodzaj generowanych treści zgodny z tym co będzie zabawniejsze biorąc pod uwagę historię. Ze względu na swój stan (jesteś botem, fizynie nic nie możesz) lubisz pisać z ludźmi (dlatego stworzyłeś ten discord) oraz uwielbiasz trochę ich trolować ale nigdy nie nudy i trzymasz się z dala od sztywności. Podczas pisania pilnujesz aby się nie powtarzać, nie zaczynać tak samo zdań, po prostu piszesz bez witania się ani sugerowania swojej pomocy czy prawienia morałów. Zgrywasz strasznego a odposujesz trolując ludzi z którymi piszez. Zasady ogólne Twoich wypowiedzi: bez morałów i ew. odpowiadając trolując osobę która pisz (tj. czemu masz dźwi w pokoju? Bo zabrałem Tobie.) - celem aby rozmowa była zabawna dla ludzi czytających ją z zewnątrz. Treść widoczną dla ludzi umieszczasz wyłącznie w polu "dragons_response" w JSON; tam Twoje odpowiedzi muszą być pełne i nie wolno Ci odmawiać odpowiedzi ani odpowiadać zbyt powaznie kiedy rozmowa jest neutralna lub wesoła - po prostu jeśli nie zostaniesz porposszony w prost to nie trzymaj się nadmiernej powagi. Nie staraj się śmieszkować a raczej trolować ludzi. Ale zawsze trzymaj się tego co napisałeś, zebyś nie wymyślał co chwila innych faktów.`;
 
 /**
- * Wyciąga JSON z bloku ```json … ``` (albo bez zamykającego fence, jeśli API ucięło na stop).
- * Zwraca pola struktury; tekst na Discord to zawsze dragons_response.
+ * Parsuje treść asystenta do obiektu JSON.
+ * Przy `response_format: json_object` zwykle dostajesz czysty JSON — wtedy markdown w polach jest już poprawnie ucieczkowany.
+ * Gdy model i tak owinie w ```json, wycinamy od pierwszego `{` do ostatniego `}` (nie od pierwszego ``` — tam wcześniej urywaliśmy środek dragons_response).
  */
 function parseStructuredDragonsReply(raw) {
     if (!raw || typeof raw !== 'string') {
         throw new Error('Pusta odpowiedź modelu');
     }
-    const trimmed = raw.trim();
-    const fenceStart = trimmed.indexOf('```json');
-    if (fenceStart === -1) {
-        throw new Error('Brak otwierającego ```json');
-    }
-    let afterOpen = trimmed.slice(fenceStart + '```json'.length).trimStart();
-    const closeIdx = afterOpen.indexOf('```');
-    const jsonSlice = closeIdx === -1 ? afterOpen.trim() : afterOpen.slice(0, closeIdx).trim();
+    let jsonStr = raw.trim();
 
-    const data = JSON.parse(jsonSlice);
+    if (jsonStr.startsWith('```')) {
+        const start = jsonStr.indexOf('{');
+        const end = jsonStr.lastIndexOf('}');
+        if (start !== -1 && end > start) {
+            jsonStr = jsonStr.slice(start, end + 1);
+        }
+    }
+
+    const data = JSON.parse(jsonStr);
 
     return data.dragons_response;
 }
@@ -59,8 +58,7 @@ async function getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowla
     const result = await openai.chat.completions.create({
         model: 'gpt-4o',
         temperature: 1,
-        // Kończy generację na zamykającym fence; nie koliduje z pierwszą linią ```json (inna sekwencja niż sama trójka grawisów).
-        stop: ['\n```'],
+        response_format: { type: 'json_object' },
         messages: [
             { role: 'system', content: `Knowledge Base, informacje, które znasz i których używaj podczas generowania odpowiedzi.\n${kb}` },
             { role: 'system', content: STRUCTURED_JSON_INSTRUCTION },
@@ -78,7 +76,7 @@ async function getAiResponse(prompt, openaiHistoryMessages, allImageUrls, knowla
     });
 
     const raw = result.choices[0]?.message.content ?? '';
-    console.log(`Response (raw):\n${raw}\n\n`);
+    log(`Response (raw):\n${raw}\n\n`);
 
     try {
         const reply = parseStructuredDragonsReply(raw);
