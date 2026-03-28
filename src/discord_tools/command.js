@@ -4,7 +4,7 @@ const fsPromises = require('node:fs').promises;
 const path = require('node:path');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const commands = [];
 // Grab all the command folders from the commands directory you created earlier

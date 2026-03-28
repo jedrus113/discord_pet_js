@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 require('./command')
 const { log } = require('../utils/logger');
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const client = new Client({
     intents: [
