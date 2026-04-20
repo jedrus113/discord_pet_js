@@ -1,7 +1,8 @@
 const client = require('./discord_tools/client');
 const MyDiscordHelperPerServer = require('./discord_tools/server_class');
-const { Events, ChannelType } = require('discord.js');
+const { Events, ChannelType, InteractionType } = require('discord.js');
 const { openAiChat } = require('./ai_tools/chatbot');
+const { handleStopButton, handleMinecraftHostMessage, isMinecraftHostMessage } = require('./mc_fetcher');
 const { log } = require('./utils/logger');
 
 // bot logged in
@@ -50,7 +51,11 @@ client.on(Events.MessageCreate, async (message) => {
   const isPrivate = message.channel?.type === ChannelType.DM;
   const isBotMentioned = message.mentions?.users.has(client.user.id);
 
-  if (!isPrivate && !isBotMentioned) return;
+  if (!isPrivate && !isBotMentioned) {
+    // TODO: TEMP remove it and implement for channel
+    if(isMinecraftHostMessage(message)) handleMinecraftHostMessage(message);
+    return;
+  }
 
   log(`Mesasge in ${message.channel.name} by ${message.author.username} content:\n${message.content}\n`);
 
@@ -70,5 +75,15 @@ client.on(Events.MessageCreate, async (message) => {
     message.reply(reply.slice(i, i + 2000));
   }
 });
+
+
+// new: button press handler
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.type !== InteractionType.MessageComponent) return;
+  if (interaction.customId.startsWith('mc_stop:')) {
+    await handleStopButton(interaction);
+  }
+});
+
 
 client.login(process.env.DISCORD_TOKEN);
