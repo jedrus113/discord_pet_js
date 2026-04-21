@@ -7,8 +7,8 @@ const { log } = require('./utils/logger');
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const STATIC_MC_DC_CHANNEL = '1343304774346604635'; // replace with real channel ID
-const POLL_INTERVAL_MS     = 60_000;
-const OFFLINE_TIMEOUT_MS   = 60 * 60 * 1000;
+const POLL_INTERVAL_MS     = 5 * 60_000;
+const OFFLINE_TIMEOUT_MS   = 60 * 1000;
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ async function handleMinecraftHostMessage(message) {
   log(`[MC] Starting watcher for ${address}`);
 
   // Register watcher entry before first tick
-  watchers.set(address, { channel: message.channel, timeoutId: null, offlineSince: null, botMessage: null });
+  watchers.set(address, { channel: message.channel, timeoutId: null, offlineSince: null, botMessage: null, failed_init_counter: 0 });
 
   // Kick off the recursive loop immediately
   await pollOnce(address);
@@ -91,7 +91,7 @@ async function pollOnce(address) {
       log(`[MC] ${address} offline for 24h — auto-stopping watcher`);
       if (watcher.botMessage) {
         await watcher.botMessage.edit({
-          embeds:     [buildEmbed(address, stats, '⏹ Auto-stopped: offline for 24 h')],
+          embeds:     [buildEmbed(address, stats, '⏹ Auto-stopped: offline for too long')],
           components: [],
         });
       }
@@ -105,10 +105,20 @@ async function pollOnce(address) {
   // ── Update the Discord message ────────────────────────────────────────────
   try {
     if (!watcher.botMessage && stats?.online) watcher.botMessage = await makeMessage(watcher);
-    if (watcher.botMessage) await watcher.botMessage.edit({
-      embeds:     [buildEmbed(address, stats)],
-      components: [buildStopButton(address)],
-    });
+    if (watcher.botMessage) {
+      await watcher.botMessage.edit({
+        embeds:     [buildEmbed(address, stats)],
+        components: [buildStopButton(address)],
+      });
+    } else {
+      // if still not initialized watcher.botMessage then newer it was successfully made
+      watcher.failed_init_counter += 1;
+      if (watcher.failed_init_counter > 10) {
+        // maybe thats not aternos srever?
+        log(`[MC] maybe that (${address}) is not aternos server? Exiting checkerd..`);
+        return;
+      }
+    }
   } catch (err) {
     log(`[MC] Failed to edit message for ${address}:`);
   }

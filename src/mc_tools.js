@@ -2,25 +2,9 @@ const mc = require('minecraft-protocol');
 
 
 // Known Aternos "offline" indicators
-const ATERNOS_OFFLINE_MOTD_PATTERNS = [
-  /server\s+is\s+sleeping/i,
-  /server\s+is\s+starting/i,
-  /server\s+is\s+loading/i,
-  /server\s+is\s+offline/i,
-  /an\s+aternos\s+server/i,       // generic placeholder MOTD
-  /start\s+the\s+server/i,
-  /join\s+to\s+start/i,
-  /waiting\s+for\s+server/i,
-  /server\s+not\s+found/i,
-  /preparing\s+server/i,
-];
+const OFFLINE_MOTD = /server\s+is\s+(sleeping|starting|loading|offline)|an\s+aternos\s+server|start\s+the\s+server|join\s+to\s+start|waiting\s+for\s+server|server\s+not\s+found|preparing\s+server/i;
 
-const ATERNOS_OFFLINE_VERSION_PATTERNS = [
-  /offline/i,
-  /⚠/,                            // warning symbol in version name
-  /aternos/i,                     // proxy self-identifying
-];
-
+const OFFLINE_VERSION = /offline|aternos|error|⚠|⚠️/i;
 /**
  * Recursively extract plain text from a Minecraft JSON chat component.
  */
@@ -52,31 +36,34 @@ function isAternosServerTrulyOnline(result) {
   const versionName = result.version?.name ?? '';
   const protocol = result.version?.protocol ?? -1;
   const maxPlayers = result.players?.max ?? 0;
-  const onlinePlayers = result.players?.online ?? 0;
   const motdText = extractMotdText(result.description).trim();
 
+  // Guard: treat missing/empty data as offline
+  if (!motdText && !versionName) {
+    return {
+      truly_online: false,
+      reason: "No MOTD or version data returned (API error or server unreachable)",
+      motd: motdText,
+    };
+  }
+
   // 1. Check MOTD for known "offline" phrases
-  for (const pattern of ATERNOS_OFFLINE_MOTD_PATTERNS) {
-    if (pattern.test(motdText)) {
-      return {
-        truly_online: false,
-        reason: `MOTD matches offline pattern: ${pattern}`,
-        motd: motdText,
-      };
-    }
+  if (motdText && OFFLINE_MOTD.test(motdText)) {
+    return {
+      truly_online: false,
+      reason: `MOTD matches offline pattern`,
+      motd: motdText,
+    };
   }
 
   // 2. Check version name for offline indicators
-  for (const pattern of ATERNOS_OFFLINE_VERSION_PATTERNS) {
-    if (pattern.test(versionName)) {
-      return {
-        truly_online: false,
-        reason: `Version name matches offline pattern: "${versionName}"`,
-        motd: motdText,
-      };
-    }
+  if (versionName && OFFLINE_VERSION.test(versionName)) {
+    return {
+      truly_online: false,
+      reason: `Version name matches offline pattern: "${versionName}"`,
+      motd: motdText,
+    };
   }
-
   // 3. Protocol -1 or 0 almost always means the proxy is faking a response
   if (protocol <= 0) {
     return {
@@ -119,7 +106,7 @@ async function fetchMcStats(address) {
 
   const RETRIES = 2;               // fewer retries — Aternos proxy answers fast
   const TIMEOUT = isAternos ? 6000 : 8000;
-  const RETRY_DELAY = 1500;
+  const RETRY_DELAY = 10_000;
 
   for (let attempt = 1; attempt <= RETRIES; attempt++) {
     try {
